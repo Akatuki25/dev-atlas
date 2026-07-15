@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package atlas.v1;
+
+// dev-atlas ドメイン契約 — この proto が単一の真実。
+// backend(Python/FastAPI DDD 9層)と web(Next.js 型/client/CRUD UI)は
+// すべて mss-protoc-gen(vendored)がこのファイルから生成する。
+
+// @entity
+message Project {
+  // @pk @paging
+  string id = 1;
+  // @required @label プロジェクト名 @list primary
+  string name = 2;
+  // @label ゴール @list secondary
+  string goal = 3;
+  // @required @label 状態
+  string status = 4;
+  // @label 進捗率
+  int32 progress = 5;
+  // @label リポジトリURL
+  string repo_url = 6;
+  // @label KBノード
+  string kb_node = 7;
+  // @timestamp
+  int64 created_at_unix = 8;
+}
+
+// @entity
+message WorkLog {
+  // @pk @paging
+  string id = 1;
+  // @required @label プロジェクトID
+  string project_id = 2;
+  // @required @label 作業内容 @list primary
+  string summary = 3;
+  // @label 作業時間(分) @list secondary
+  int32 minutes = 4;
+  // @label 記録元
+  string source = 5;
+  // @timestamp
+  int64 created_at_unix = 6;
+}
+
+// ---------- Project ----------
+
+message ListProjectsRequest {}
+message ListProjectsResponse {
+  repeated Project projects = 1;
+}
+
+// cursor pagination: after_id が空なら先頭ページ、非空なら指定 id より後を limit 件。
+message ListProjectsByCursorRequest {
+  int32 limit = 1;
+  string after_id = 2;
+}
+message ListProjectsByCursorResponse {
+  repeated Project projects = 1;
+}
+
+message GetProjectRequest {
+  string id = 1;
+}
+message GetProjectResponse {
+  Project project = 1;
+}
+
+message CreateProjectRequest {
+  string name = 1;
+  string goal = 2;
+  string status = 3;
+  int32 progress = 4;
+  string repo_url = 5;
+  string kb_node = 6;
+}
+message CreateProjectResponse {
+  Project project = 1;
+}
+
+message UpdateProjectRequest {
+  string id = 1;
+  string name = 2;
+  string goal = 3;
+  string status = 4;
+  int32 progress = 5;
+  string repo_url = 6;
+  string kb_node = 7;
+}
+message UpdateProjectResponse {
+  Project project = 1;
+}
+
+message DeleteProjectRequest {
+  string id = 1;
+}
+message DeleteProjectResponse {}
+
+service ProjectService {
+  // @http GET /api/projects
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+
+  // @http GET /api/projects/cursor
+  rpc ListProjectsByCursor(ListProjectsByCursorRequest) returns (ListProjectsByCursorResponse);
+
+  // @http GET /api/projects/{id}
+  rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+
+  // @http POST /api/projects
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+
+  // @http PATCH /api/projects/{id}
+  rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse);
+
+  // @http DELETE /api/projects/{id}
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
+}
+
+// ---------- WorkLog ----------
+
+message ListWorkLogsRequest {}
+message ListWorkLogsResponse {
+  repeated WorkLog work_logs = 1;
+}
+
+message ListWorkLogsByCursorRequest {
+  int32 limit = 1;
+  string after_id = 2;
+}
+message ListWorkLogsByCursorResponse {
+  repeated WorkLog work_logs = 1;
+}
+
+message GetWorkLogRequest {
+  string id = 1;
+}
+message GetWorkLogResponse {
+  WorkLog work_log = 1;
+}
+
+message CreateWorkLogRequest {
+  string project_id = 1;
+  string summary = 2;
+  int32 minutes = 3;
+  string source = 4;
+}
+message CreateWorkLogResponse {
+  WorkLog work_log = 1;
+}
+
+message UpdateWorkLogRequest {
+  string id = 1;
+  string project_id = 2;
+  string summary = 3;
+  int32 minutes = 4;
+  string source = 5;
+}
+message UpdateWorkLogResponse {
+  WorkLog work_log = 1;
+}
+
+message DeleteWorkLogRequest {
+  string id = 1;
+}
+message DeleteWorkLogResponse {}
+
+service WorkLogService {
+  // @http GET /api/work-logs
+  rpc ListWorkLogs(ListWorkLogsRequest) returns (ListWorkLogsResponse);
+
+  // @http GET /api/work-logs/cursor
+  rpc ListWorkLogsByCursor(ListWorkLogsByCursorRequest) returns (ListWorkLogsByCursorResponse);
+
+  // @http GET /api/work-logs/{id}
+  rpc GetWorkLog(GetWorkLogRequest) returns (GetWorkLogResponse);
+
+  // @http POST /api/work-logs
+  rpc CreateWorkLog(CreateWorkLogRequest) returns (CreateWorkLogResponse);
+
+  // @http PATCH /api/work-logs/{id}
+  rpc UpdateWorkLog(UpdateWorkLogRequest) returns (UpdateWorkLogResponse);
+
+  // @http DELETE /api/work-logs/{id}
+  rpc DeleteWorkLog(DeleteWorkLogRequest) returns (DeleteWorkLogResponse);
+}

@@ -1,0 +1,96 @@
+{
+  "tables": {
+    "projects": {
+      "columns": {
+        "created_at": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "timestamptz",
+          "unique": false
+        },
+        "goal": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "id": {
+          "not_null": true,
+          "primary_key": true,
+          "sql_type": "text",
+          "unique": false
+        },
+        "kb_node": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "name": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "progress": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "integer",
+          "unique": false
+        },
+        "repo_url": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "status": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        }
+      }
+    },
+    "work_logs": {
+      "columns": {
+        "created_at": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "timestamptz",
+          "unique": false
+        },
+        "id": {
+          "not_null": true,
+          "primary_key": true,
+          "sql_type": "text",
+          "unique": false
+        },
+        "minutes": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "integer",
+          "unique": false
+        },
+        "project_id": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "source": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "summary": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        }
+      }
+    }
+  }
+}
