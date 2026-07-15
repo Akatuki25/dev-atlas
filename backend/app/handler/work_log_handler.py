@@ -142,7 +142,7 @@ def new_work_log_router(uc: WorkLogServiceUsecase) -> APIRouter:
         id: str,
     ):
         try:
-            result = uc.delete_work_log(
+            uc.delete_work_log(
                 DeleteWorkLogInput(
                     id=id,
                 )

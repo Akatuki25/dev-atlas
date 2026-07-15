@@ -2,7 +2,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
-from pydantic import BaseModel
 from app.dto.work_log import WorkLogDTO
 
 @dataclass

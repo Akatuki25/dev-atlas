@@ -10,7 +10,6 @@ from app.domain.entity.project import Project
 from app.domain.entity.work_log import WorkLog
 from app.domain.repository.mock.mock_project_repository import MockProjectRepository
 from app.domain.repository.mock.mock_work_log_repository import MockWorkLogRepository
-from app.domain.repository.project_repository import ProjectNotFoundError
 from app.domain.service.work_log_service import WorkLogService
 from app.usecase.work_log_usecase import WorkLogUsecase
 from app.usecase.work_log_usecase_interface import (
@@ -49,7 +48,7 @@ def test_create_work_log_returns_dto():
 def test_create_work_log_missing_project_raises():
     repo, projects = MockWorkLogRepository(), MockProjectRepository()
     projects.select_by_pk_func = lambda id: None  # project が存在しない
-    with pytest.raises(ProjectNotFoundError):
+    with pytest.raises(ValueError, match="project not found"):
         _uc(repo, projects).create_work_log(CreateWorkLogInput(
             project_id="ghost", summary="s", minutes=10, source="mcp"))
 

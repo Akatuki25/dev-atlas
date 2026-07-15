@@ -8,7 +8,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 
 from app.domain.entity.work_log import WorkLog
-from app.domain.repository.project_repository import ProjectRepository, ProjectNotFoundError
+from app.domain.repository.project_repository import ProjectRepository
 from app.domain.repository.work_log_repository import (
     WorkLogRepository,
     WorkLogNotFoundError,
@@ -32,8 +32,10 @@ class WorkLogService:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def create(self, project_id: str, summary: str, minutes: int, source: str) -> WorkLog:
+        # 集約間参照の失敗は「不正な入力」として ValueError に寄せる
+        # (生成 handler は WorkLog系例外 + ValueError(→400) だけを捕捉するため)
         if self._projects.select_by_pk(project_id) is None:
-            raise ProjectNotFoundError()
+            raise ValueError(f"project not found: {project_id}")
         _validate(minutes, source)
         log = WorkLog.new(uuid.uuid4().hex, project_id, summary, minutes,
                           source or "manual", self._clock())
@@ -54,7 +56,7 @@ class WorkLogService:
         if cur is None:
             raise WorkLogNotFoundError()
         if self._projects.select_by_pk(project_id) is None:
-            raise ProjectNotFoundError()
+            raise ValueError(f"project not found: {project_id}")
         _validate(minutes, source)
         updated = WorkLog.new(id, project_id, summary, minutes,
                               source or cur.source, cur.created_at)  # created_at を保持

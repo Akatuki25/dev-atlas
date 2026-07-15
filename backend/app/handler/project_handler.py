@@ -150,7 +150,7 @@ def new_project_router(uc: ProjectServiceUsecase) -> APIRouter:
         id: str,
     ):
         try:
-            result = uc.delete_project(
+            uc.delete_project(
                 DeleteProjectInput(
                     id=id,
                 )

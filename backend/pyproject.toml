@@ -11,6 +11,7 @@ dependencies = [
     "pydantic>=2.9",
     "protobuf>=5.28",
     "alembic>=1.13",
+    "mcp>=1.28.1",
 ]
 
 [dependency-groups]
