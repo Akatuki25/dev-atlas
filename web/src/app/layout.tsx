@@ -23,6 +23,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Link href="/" style={{ fontWeight: 700, textDecoration: "none", color: "inherit" }}>
             dev-atlas
           </Link>
+          <Link href="/p" style={{ textDecoration: "none", color: "inherit" }}>
+            Hub
+          </Link>
           <Link href="/projects" style={{ textDecoration: "none", color: "inherit" }}>
             Projects
           </Link>

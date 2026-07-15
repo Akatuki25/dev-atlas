@@ -52,6 +52,46 @@
         }
       }
     },
+    "tasks": {
+      "columns": {
+        "created_at": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "timestamptz",
+          "unique": false
+        },
+        "id": {
+          "not_null": true,
+          "primary_key": true,
+          "sql_type": "text",
+          "unique": false
+        },
+        "note": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "project_id": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "status": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "title": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        }
+      }
+    },
     "work_logs": {
       "columns": {
         "created_at": {

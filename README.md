@@ -86,9 +86,10 @@ claude mcp add --transport http dev-atlas http://localhost:8000/mcp
 |---|---|
 | `list_projects` | プロジェクト一覧(id・状態・進捗率) |
 | `create_project` | プロジェクト登録 |
-| `project_status` | 現状把握: 進捗・累計工数・直近ログ5件 |
+| `project_status` | 現状把握: 進捗・累計工数・タスク集計・直近ログ |
 | `update_progress` | 進捗率(0–100)・状態(active/paused/done)の更新 |
 | `log_work` | **作業ログの自動記録**(コミット・タスク完了の区切りで呼ばせる) |
+| `list_tasks` / `create_task` / `complete_task` | タスクの参照・分解・完了(エージェントがタスク駆動で進捗を刻む) |
 | `search_kb` | KB の全文検索 |
 | `read_kb_node` | KB ノードを名前で読む |
 
@@ -99,6 +100,7 @@ claude mcp add --transport http dev-atlas http://localhost:8000/mcp
 
 | 画面 | |
 |---|---|
+| **Project Hub**(進捗・タスク・工数・KBを1画面に) | ![hub](docs/screenshots/hub.png) |
 | ホーム | ![home](docs/screenshots/home.png) |
 | プロジェクト一覧(優先度カードリスト・生成UI) | ![projects](docs/screenshots/projects.png) |
 | 作業ログ登録フォーム(生成UI・validation付) | ![worklog form](docs/screenshots/worklog-form.png) |

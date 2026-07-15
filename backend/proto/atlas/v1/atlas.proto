@@ -42,6 +42,22 @@ message WorkLog {
   int64 created_at_unix = 6;
 }
 
+// @entity
+message Task {
+  // @pk @paging
+  string id = 1;
+  // @required @label プロジェクトID
+  string project_id = 2;
+  // @required @label タイトル @list primary
+  string title = 3;
+  // @required @label 状態 @list secondary
+  string status = 4;
+  // @label メモ
+  string note = 5;
+  // @timestamp
+  int64 created_at_unix = 6;
+}
+
 // ---------- Project ----------
 
 message ListProjectsRequest {}
@@ -162,6 +178,74 @@ message DeleteWorkLogRequest {
   string id = 1;
 }
 message DeleteWorkLogResponse {}
+
+// ---------- Task ----------
+
+message ListTasksRequest {}
+message ListTasksResponse {
+  repeated Task tasks = 1;
+}
+
+message ListTasksByCursorRequest {
+  int32 limit = 1;
+  string after_id = 2;
+}
+message ListTasksByCursorResponse {
+  repeated Task tasks = 1;
+}
+
+message GetTaskRequest {
+  string id = 1;
+}
+message GetTaskResponse {
+  Task task = 1;
+}
+
+message CreateTaskRequest {
+  string project_id = 1;
+  string title = 2;
+  string status = 3;
+  string note = 4;
+}
+message CreateTaskResponse {
+  Task task = 1;
+}
+
+message UpdateTaskRequest {
+  string id = 1;
+  string project_id = 2;
+  string title = 3;
+  string status = 4;
+  string note = 5;
+}
+message UpdateTaskResponse {
+  Task task = 1;
+}
+
+message DeleteTaskRequest {
+  string id = 1;
+}
+message DeleteTaskResponse {}
+
+service TaskService {
+  // @http GET /api/tasks
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+
+  // @http GET /api/tasks/cursor
+  rpc ListTasksByCursor(ListTasksByCursorRequest) returns (ListTasksByCursorResponse);
+
+  // @http GET /api/tasks/{id}
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
+
+  // @http POST /api/tasks
+  rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);
+
+  // @http PATCH /api/tasks/{id}
+  rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
+
+  // @http DELETE /api/tasks/{id}
+  rpc DeleteTask(DeleteTaskRequest) returns (DeleteTaskResponse);
+}
 
 service WorkLogService {
   // @http GET /api/work-logs
