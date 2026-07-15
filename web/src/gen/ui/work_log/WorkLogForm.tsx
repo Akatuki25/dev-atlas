@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createWorkLog, updateWorkLog, getWorkLog } from "../../client/work_log";
-import { Field } from "../../../lib/widgets";
+import { Field, Button, ErrorText } from "../../../lib/widgets";
 
 // 生成フォーム(create/edit): 編集可能フィールドのみ。validation は @required/@email から生成(entity検証と同源)。
 export function WorkLogForm({ id }: { id?: string }) {
@@ -34,13 +34,13 @@ export function WorkLogForm({ id }: { id?: string }) {
     router.refresh();
   }
   return (
-    <form onSubmit={submit} style={{ display: "grid", gap: 8, maxWidth: 360 }}>
+    <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-3)", maxWidth: 400 }}>
       <Field label="プロジェクトID" type="text" value={project_id} onChange={set_project_id} />
       <Field label="作業内容" type="text" value={summary} onChange={set_summary} />
       <Field label="作業時間(分)" type="text" value={minutes} onChange={set_minutes} />
       <Field label="記録元" type="text" value={source} onChange={set_source} />
-      {error && <div style={{ color: "crimson", fontSize: 13 }}>{error}</div>}
-      <button type="submit">{id ? "Update" : "Create"}</button>
+      {error && <ErrorText>{error}</ErrorText>}
+      <div><Button type="submit" variant="primary">{id ? "Update" : "Create"}</Button></div>
     </form>
   );
 }

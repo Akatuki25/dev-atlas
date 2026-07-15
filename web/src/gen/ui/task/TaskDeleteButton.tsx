@@ -3,6 +3,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { deleteTask } from "../../client/task";
+import { Button } from "../../../lib/widgets";
 
 export function TaskDeleteButton({ id }: { id: string }) {
   const router = useRouter();
@@ -12,5 +13,5 @@ export function TaskDeleteButton({ id }: { id: string }) {
     router.push("/tasks");
     router.refresh();
   }
-  return <button type="button" onClick={onDelete} style={{ color: "crimson" }}>Delete</button>;
+  return <Button variant="danger" onClick={onDelete}>Delete</Button>;
 }

@@ -101,6 +101,7 @@ claude mcp add --transport http dev-atlas http://localhost:8000/mcp
 | 画面 | |
 |---|---|
 | **Project Hub**(進捗・タスク・工数・KBを1画面に) | ![hub](docs/screenshots/hub.png) |
+| 同・ダークモード(design tokensで自動追従) | ![hub dark](docs/screenshots/hub-dark.png) |
 | ホーム | ![home](docs/screenshots/home.png) |
 | プロジェクト一覧(優先度カードリスト・生成UI) | ![projects](docs/screenshots/projects.png) |
 | 作業ログ登録フォーム(生成UI・validation付) | ![worklog form](docs/screenshots/worklog-form.png) |

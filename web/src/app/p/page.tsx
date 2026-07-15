@@ -1,9 +1,12 @@
-// 手書き: hub 入口 — プロジェクトを選んで /p/[id](ハブ)へ。
+// 手書き: hub 入口 — プロジェクトを選んで /p/[id](ハブ)へ。widgets/tokens 準拠。
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { listProjects } from "../../gen/client/project";
 import type { Project } from "../../gen/types/project";
+import { Page, ListStack, ListRow, EmptyState, Badge, ProgressBar } from "../../lib/widgets";
+
+const TONE: Record<string, "accent" | "ok" | "warn"> = { active: "accent", done: "ok", paused: "warn" };
 
 export default function HubIndex() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -11,20 +14,26 @@ export default function HubIndex() {
     listProjects().then(setProjects).catch(() => {});
   }, []);
   return (
-    <main style={{ maxWidth: 720, margin: "2rem auto", padding: "0 16px", fontFamily: "system-ui" }}>
-      <h1>Hub</h1>
-      <p style={{ color: "#666", fontSize: 14 }}>プロジェクトの進捗・タスク・工数・KBを1画面で。</p>
-      <div style={{ display: "grid", gap: 8 }}>
-        {projects.map((p) => (
-          <Link key={p.id} href={"/p/" + p.id} style={{ textDecoration: "none", color: "inherit" }}>
-            <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
-              <div style={{ fontWeight: 700 }}>{p.name}</div>
-              <div style={{ color: "#666", fontSize: 13 }}>{p.status} · {p.progress}%</div>
-            </div>
-          </Link>
-        ))}
-        {projects.length === 0 && <div style={{ color: "#888" }}>プロジェクトがありません(/projects/new で作成)</div>}
-      </div>
-    </main>
+    <Page title="Hub" actions={<Link href="/projects/new" style={{ fontSize: "var(--text-sm)" }}>+ New</Link>}>
+      {projects.length === 0 ? (
+        <EmptyState message="プロジェクトがありません" action={<Link href="/projects/new">+ New</Link>} />
+      ) : (
+        <ListStack>
+          {projects.map((p) => (
+            <ListRow
+              key={p.id}
+              href={"/p/" + p.id}
+              leading={<Badge tone={TONE[p.status] ?? "neutral"}>{p.status}</Badge>}
+              primary={p.name}
+              secondary={
+                <span style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", minWidth: 200 }}>
+                  <ProgressBar value={p.progress} tone={TONE[p.status] ?? "accent"} /> {p.progress}%
+                </span>
+              }
+            />
+          ))}
+        </ListStack>
+      )}
+    </Page>
   );
 }

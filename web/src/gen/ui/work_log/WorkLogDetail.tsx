@@ -6,23 +6,18 @@ import Link from "next/link";
 import { getWorkLog } from "../../client/work_log";
 import { WorkLogDeleteButton } from "./WorkLogDeleteButton";
 import type { WorkLog } from "../../types/work_log";
+import { KVList } from "../../../lib/widgets";
 
-// 詳細: 本質(primary)を先に、残りは従属表示(progressive disclosure)。
+// 詳細: 本質(primary)を先に、残りは従属表示(progressive disclosure)。見た目は widget に委譲。
 export function WorkLogDetail({ id }: { id: string }) {
   const [item, setItem] = useState<WorkLog | null>(null);
   useEffect(() => { getWorkLog(id).then(setItem).catch(() => setItem(null)); }, [id]);
-  if (!item) return <p>Loading…</p>;
+  if (!item) return <p style={{ color: "var(--text-faint)" }}>Loading…</p>;
   return (
-    <div style={{ display: "grid", gap: 12 }}>
-      <h2 style={{ margin: 0 }}>{item.project_id}</h2>
-      <dl style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 12px", color: "#444" }}>
-        <dt style={{ color: "#888" }}>Id</dt><dd style={{ margin: 0 }}>{item.id}</dd>
-        <dt style={{ color: "#888" }}>作業内容</dt><dd style={{ margin: 0 }}>{item.summary}</dd>
-        <dt style={{ color: "#888" }}>作業時間(分)</dt><dd style={{ margin: 0 }}>{item.minutes}</dd>
-        <dt style={{ color: "#888" }}>記録元</dt><dd style={{ margin: 0 }}>{item.source}</dd>
-        <dt style={{ color: "#888" }}>Created At</dt><dd style={{ margin: 0 }}>{new Date(item.created_at_unix * 1000).toLocaleDateString()}</dd>
-      </dl>
-      <div style={{ display: "flex", gap: 12 }}>
+    <div style={{ display: "grid", gap: "var(--sp-4)" }}>
+      <h2 style={{ margin: 0, fontSize: "var(--text-lg)" }}>{item.project_id}</h2>
+      <KVList items={[{ k: "Id", v: <>{item.id}</> }, { k: "作業内容", v: <>{item.summary}</> }, { k: "作業時間(分)", v: <>{item.minutes}</> }, { k: "記録元", v: <>{item.source}</> }, { k: "Created At", v: <>{new Date(item.created_at_unix * 1000).toLocaleDateString()}</> }]} />
+      <div style={{ display: "flex", gap: "var(--sp-3)", alignItems: "center" }}>
         <Link href={`/work_logs/${id}/edit`}>Edit</Link>
         <WorkLogDeleteButton id={id} />
       </div>

@@ -5,24 +5,20 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { listProjects } from "../../client/project";
 import type { Project } from "../../types/project";
+import { ListStack, ListRow, EmptyState } from "../../../lib/widgets";
 
-// 優先度カードリスト(全列テーブルにしない): primary を突出、secondary を従属。
+// 優先度カードリスト(全列テーブルにしない): primary を突出、secondary を従属。見た目は widget に委譲。
 export function ProjectList() {
   const [rows, setRows] = useState<Project[]>([]);
   useEffect(() => { listProjects().then(setRows).catch(() => setRows([])); }, []);
+  if (rows.length === 0) {
+    return <EmptyState message="No projects yet" action={<Link href="/projects/new">+ New</Link>} />;
+  }
   return (
-    <div>
-      <Link href="/projects/new">+ New</Link>
-      <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 8, marginTop: 12 }}>
-        {rows.map((r) => (
-          <li key={r.id} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
-            <Link href={`/projects/${r.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>{r.name}</div>
-              <div style={{ color: "#666", fontSize: 13 }}>{r.id} <span> · </span> {r.goal} <span> · </span> {r.progress} <span> · </span> {new Date(r.created_at_unix * 1000).toLocaleDateString()}</div>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ListStack>
+      {rows.map((r) => (
+        <ListRow key={r.id} href={`/projects/${r.id}`} primary={<>{r.name}</>} secondary={<>{r.id} <span> · </span> {r.goal} <span> · </span> {r.progress} <span> · </span> {new Date(r.created_at_unix * 1000).toLocaleDateString()}</>} />
+      ))}
+    </ListStack>
   );
 }

@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProject, updateProject, getProject } from "../../client/project";
-import { Field } from "../../../lib/widgets";
+import { Field, Button, ErrorText } from "../../../lib/widgets";
 
 // 生成フォーム(create/edit): 編集可能フィールドのみ。validation は @required/@email から生成(entity検証と同源)。
 export function ProjectForm({ id }: { id?: string }) {
@@ -38,15 +38,15 @@ export function ProjectForm({ id }: { id?: string }) {
     router.refresh();
   }
   return (
-    <form onSubmit={submit} style={{ display: "grid", gap: 8, maxWidth: 360 }}>
+    <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-3)", maxWidth: 400 }}>
       <Field label="プロジェクト名" type="text" value={name} onChange={set_name} />
       <Field label="ゴール" type="text" value={goal} onChange={set_goal} />
       <Field label="状態" type="text" value={status} onChange={set_status} />
       <Field label="進捗率" type="text" value={progress} onChange={set_progress} />
       <Field label="リポジトリURL" type="text" value={repo_url} onChange={set_repo_url} />
       <Field label="KBノード" type="text" value={kb_node} onChange={set_kb_node} />
-      {error && <div style={{ color: "crimson", fontSize: 13 }}>{error}</div>}
-      <button type="submit">{id ? "Update" : "Create"}</button>
+      {error && <ErrorText>{error}</ErrorText>}
+      <div><Button type="submit" variant="primary">{id ? "Update" : "Create"}</Button></div>
     </form>
   );
 }

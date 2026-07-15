@@ -3,6 +3,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { deleteProject } from "../../client/project";
+import { Button } from "../../../lib/widgets";
 
 export function ProjectDeleteButton({ id }: { id: string }) {
   const router = useRouter();
@@ -12,5 +13,5 @@ export function ProjectDeleteButton({ id }: { id: string }) {
     router.push("/projects");
     router.refresh();
   }
-  return <button type="button" onClick={onDelete} style={{ color: "crimson" }}>Delete</button>;
+  return <Button variant="danger" onClick={onDelete}>Delete</Button>;
 }

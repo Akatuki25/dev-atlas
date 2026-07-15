@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTask, updateTask, getTask } from "../../client/task";
-import { Field } from "../../../lib/widgets";
+import { Field, Button, ErrorText } from "../../../lib/widgets";
 
 // 生成フォーム(create/edit): 編集可能フィールドのみ。validation は @required/@email から生成(entity検証と同源)。
 export function TaskForm({ id }: { id?: string }) {
@@ -35,13 +35,13 @@ export function TaskForm({ id }: { id?: string }) {
     router.refresh();
   }
   return (
-    <form onSubmit={submit} style={{ display: "grid", gap: 8, maxWidth: 360 }}>
+    <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-3)", maxWidth: 400 }}>
       <Field label="プロジェクトID" type="text" value={project_id} onChange={set_project_id} />
       <Field label="タイトル" type="text" value={title} onChange={set_title} />
       <Field label="状態" type="text" value={status} onChange={set_status} />
       <Field label="メモ" type="text" value={note} onChange={set_note} />
-      {error && <div style={{ color: "crimson", fontSize: 13 }}>{error}</div>}
-      <button type="submit">{id ? "Update" : "Create"}</button>
+      {error && <ErrorText>{error}</ErrorText>}
+      <div><Button type="submit" variant="primary">{id ? "Update" : "Create"}</Button></div>
     </form>
   );
 }

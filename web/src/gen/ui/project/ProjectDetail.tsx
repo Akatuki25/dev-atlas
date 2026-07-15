@@ -6,25 +6,18 @@ import Link from "next/link";
 import { getProject } from "../../client/project";
 import { ProjectDeleteButton } from "./ProjectDeleteButton";
 import type { Project } from "../../types/project";
+import { KVList } from "../../../lib/widgets";
 
-// 詳細: 本質(primary)を先に、残りは従属表示(progressive disclosure)。
+// 詳細: 本質(primary)を先に、残りは従属表示(progressive disclosure)。見た目は widget に委譲。
 export function ProjectDetail({ id }: { id: string }) {
   const [item, setItem] = useState<Project | null>(null);
   useEffect(() => { getProject(id).then(setItem).catch(() => setItem(null)); }, [id]);
-  if (!item) return <p>Loading…</p>;
+  if (!item) return <p style={{ color: "var(--text-faint)" }}>Loading…</p>;
   return (
-    <div style={{ display: "grid", gap: 12 }}>
-      <h2 style={{ margin: 0 }}>{item.name}</h2>
-      <dl style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 12px", color: "#444" }}>
-        <dt style={{ color: "#888" }}>Id</dt><dd style={{ margin: 0 }}>{item.id}</dd>
-        <dt style={{ color: "#888" }}>ゴール</dt><dd style={{ margin: 0 }}>{item.goal}</dd>
-        <dt style={{ color: "#888" }}>状態</dt><dd style={{ margin: 0 }}>{item.status}</dd>
-        <dt style={{ color: "#888" }}>進捗率</dt><dd style={{ margin: 0 }}>{item.progress}</dd>
-        <dt style={{ color: "#888" }}>リポジトリURL</dt><dd style={{ margin: 0 }}>{item.repo_url}</dd>
-        <dt style={{ color: "#888" }}>KBノード</dt><dd style={{ margin: 0 }}>{item.kb_node}</dd>
-        <dt style={{ color: "#888" }}>Created At</dt><dd style={{ margin: 0 }}>{new Date(item.created_at_unix * 1000).toLocaleDateString()}</dd>
-      </dl>
-      <div style={{ display: "flex", gap: 12 }}>
+    <div style={{ display: "grid", gap: "var(--sp-4)" }}>
+      <h2 style={{ margin: 0, fontSize: "var(--text-lg)" }}>{item.name}</h2>
+      <KVList items={[{ k: "Id", v: <>{item.id}</> }, { k: "ゴール", v: <>{item.goal}</> }, { k: "状態", v: <>{item.status}</> }, { k: "進捗率", v: <>{item.progress}</> }, { k: "リポジトリURL", v: <>{item.repo_url}</> }, { k: "KBノード", v: <>{item.kb_node}</> }, { k: "Created At", v: <>{new Date(item.created_at_unix * 1000).toLocaleDateString()}</> }]} />
+      <div style={{ display: "flex", gap: "var(--sp-3)", alignItems: "center" }}>
         <Link href={`/projects/${id}/edit`}>Edit</Link>
         <ProjectDeleteButton id={id} />
       </div>
