@@ -17,7 +17,7 @@ export function TaskList() {
   return (
     <ListStack>
       {rows.map((r) => (
-        <ListRow key={r.id} href={`/tasks/${r.id}`} primary={<>{r.project_id}</>} secondary={<>{r.id} <span> · </span> {r.status} <span> · </span> {new Date(r.created_at_unix * 1000).toLocaleDateString()}</>} />
+        <ListRow key={r.id} href={`/tasks/${r.id}`} primary={<>{r.title}</>} secondary={<>{r.id} <span> · </span> {r.project_id} <span> · </span> {r.status} <span> · </span> {new Date(r.created_at_unix * 1000).toLocaleDateString()}</>} />
       ))}
     </ListStack>
   );

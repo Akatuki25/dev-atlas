@@ -17,7 +17,7 @@ export function WorkLogList() {
   return (
     <ListStack>
       {rows.map((r) => (
-        <ListRow key={r.id} href={`/work_logs/${r.id}`} primary={<>{r.project_id}</>} secondary={<>{r.id} <span> · </span> {r.minutes} <span> · </span> {new Date(r.created_at_unix * 1000).toLocaleDateString()}</>} />
+        <ListRow key={r.id} href={`/work_logs/${r.id}`} primary={<>{r.summary}</>} secondary={<>{r.id} <span> · </span> {r.project_id} <span> · </span> {r.minutes} <span> · </span> {new Date(r.created_at_unix * 1000).toLocaleDateString()}</>} />
       ))}
     </ListStack>
   );

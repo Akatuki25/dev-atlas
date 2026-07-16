@@ -19,11 +19,11 @@ export async function getWorkLog(id: string): Promise<WorkLog> {
   return apiFetch("/api/work-logs/" + encodeURIComponent(id), { method: "GET" });
 }
 
-export async function createWorkLog(body: { project_id: string; summary: string; minutes: number; source: string }): Promise<WorkLog> {
+export async function createWorkLog(body: { project_id: string; summary: string; detail: string; minutes: number; source: string }): Promise<WorkLog> {
   return apiFetch("/api/work-logs", { method: "POST", body });
 }
 
-export async function updateWorkLog(id: string, body: { project_id: string; summary: string; minutes: number; source: string }): Promise<WorkLog> {
+export async function updateWorkLog(id: string, body: { project_id: string; summary: string; detail: string; minutes: number; source: string }): Promise<WorkLog> {
   return apiFetch("/api/work-logs/" + encodeURIComponent(id), { method: "PATCH", body });
 }
 

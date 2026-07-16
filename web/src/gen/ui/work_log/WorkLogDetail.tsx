@@ -15,8 +15,8 @@ export function WorkLogDetail({ id }: { id: string }) {
   if (!item) return <p style={{ color: "var(--text-faint)" }}>Loading…</p>;
   return (
     <div style={{ display: "grid", gap: "var(--sp-4)" }}>
-      <h2 style={{ margin: 0, fontSize: "var(--text-lg)" }}>{item.project_id}</h2>
-      <KVList items={[{ k: "Id", v: <>{item.id}</> }, { k: "作業内容", v: <>{item.summary}</> }, { k: "作業時間(分)", v: <>{item.minutes}</> }, { k: "記録元", v: <>{item.source}</> }, { k: "Created At", v: <>{new Date(item.created_at_unix * 1000).toLocaleDateString()}</> }]} />
+      <h2 style={{ margin: 0, fontSize: "var(--text-lg)" }}>{item.summary}</h2>
+      <KVList items={[{ k: "Id", v: <>{item.id}</> }, { k: "プロジェクトID", v: <>{item.project_id}</> }, { k: "詳細", v: <>{item.detail}</> }, { k: "作業時間(分)", v: <>{item.minutes}</> }, { k: "記録元", v: <>{item.source}</> }, { k: "Created At", v: <>{new Date(item.created_at_unix * 1000).toLocaleDateString()}</> }]} />
       <div style={{ display: "flex", gap: "var(--sp-3)", alignItems: "center" }}>
         <Link href={`/work_logs/${id}/edit`}>Edit</Link>
         <WorkLogDeleteButton id={id} />

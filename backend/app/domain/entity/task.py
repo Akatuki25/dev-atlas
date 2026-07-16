@@ -13,8 +13,8 @@ class Task(Base):
     project_id: Mapped[str] = mapped_column(String(255), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(255), nullable=False)
-    note: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    note: Mapped[str] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
 
     @classmethod
     def new(cls, id: str, project_id: str, title: str, status: str, note: str, created_at: datetime) -> "Task":

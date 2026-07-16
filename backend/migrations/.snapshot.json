@@ -3,13 +3,13 @@
     "projects": {
       "columns": {
         "created_at": {
-          "not_null": true,
+          "not_null": false,
           "primary_key": false,
           "sql_type": "timestamptz",
           "unique": false
         },
         "goal": {
-          "not_null": true,
+          "not_null": false,
           "primary_key": false,
           "sql_type": "text",
           "unique": false
@@ -21,7 +21,7 @@
           "unique": false
         },
         "kb_node": {
-          "not_null": true,
+          "not_null": false,
           "primary_key": false,
           "sql_type": "text",
           "unique": false
@@ -33,13 +33,13 @@
           "unique": false
         },
         "progress": {
-          "not_null": true,
+          "not_null": false,
           "primary_key": false,
           "sql_type": "integer",
           "unique": false
         },
         "repo_url": {
-          "not_null": true,
+          "not_null": false,
           "primary_key": false,
           "sql_type": "text",
           "unique": false
@@ -55,7 +55,7 @@
     "tasks": {
       "columns": {
         "created_at": {
-          "not_null": true,
+          "not_null": false,
           "primary_key": false,
           "sql_type": "timestamptz",
           "unique": false
@@ -67,7 +67,7 @@
           "unique": false
         },
         "note": {
-          "not_null": true,
+          "not_null": false,
           "primary_key": false,
           "sql_type": "text",
           "unique": false
@@ -95,9 +95,15 @@
     "work_logs": {
       "columns": {
         "created_at": {
-          "not_null": true,
+          "not_null": false,
           "primary_key": false,
           "sql_type": "timestamptz",
+          "unique": false
+        },
+        "detail": {
+          "not_null": false,
+          "primary_key": false,
+          "sql_type": "text",
           "unique": false
         },
         "id": {
@@ -107,7 +113,7 @@
           "unique": false
         },
         "minutes": {
-          "not_null": true,
+          "not_null": false,
           "primary_key": false,
           "sql_type": "integer",
           "unique": false
@@ -119,7 +125,7 @@
           "unique": false
         },
         "source": {
-          "not_null": true,
+          "not_null": false,
           "primary_key": false,
           "sql_type": "text",
           "unique": false

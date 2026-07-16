@@ -12,12 +12,13 @@ class WorkLog(Base):
     id: Mapped[str] = mapped_column(String(255), primary_key=True)
     project_id: Mapped[str] = mapped_column(String(255), nullable=False)
     summary: Mapped[str] = mapped_column(String(255), nullable=False)
-    minutes: Mapped[int] = mapped_column(Integer, nullable=False)
-    source: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    detail: Mapped[str] = mapped_column(String(255), nullable=True)
+    minutes: Mapped[int] = mapped_column(Integer, nullable=True)
+    source: Mapped[str] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
 
     @classmethod
-    def new(cls, id: str, project_id: str, summary: str, minutes: int, source: str, created_at: datetime) -> "WorkLog":
+    def new(cls, id: str, project_id: str, summary: str, detail: str, minutes: int, source: str, created_at: datetime) -> "WorkLog":
         # 生成された validation(@pk / @required / @email)
         if not id:
             raise ValueError("id is required")
@@ -27,4 +28,4 @@ class WorkLog(Base):
         summary = (summary or "").strip()
         if not summary:
             raise ValueError("summary is required")
-        return cls(id=id, project_id=project_id, summary=summary, minutes=minutes, source=source, created_at=created_at)
+        return cls(id=id, project_id=project_id, summary=summary, detail=detail, minutes=minutes, source=source, created_at=created_at)

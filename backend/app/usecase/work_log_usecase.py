@@ -32,12 +32,12 @@ class WorkLogUsecase:  # implements WorkLogServiceUsecase (Protocol)
 
     def create_work_log(self, inp: CreateWorkLogInput) -> WorkLogDTO | None:
         return tx.run(lambda: WorkLogDTO.from_entity(
-            self._svc.create(inp.project_id, inp.summary, inp.minutes, inp.source)
+            self._svc.create(inp.project_id, inp.summary, inp.detail, inp.minutes, inp.source)
         ))
 
     def update_work_log(self, inp: UpdateWorkLogInput) -> WorkLogDTO | None:
         return tx.run(lambda: WorkLogDTO.from_entity(
-            self._svc.update(inp.id, inp.project_id, inp.summary, inp.minutes, inp.source)
+            self._svc.update(inp.id, inp.project_id, inp.summary, inp.detail, inp.minutes, inp.source)
         ))
 
     def delete_work_log(self, inp: DeleteWorkLogInput) -> None:

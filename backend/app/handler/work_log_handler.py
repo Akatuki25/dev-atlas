@@ -19,6 +19,7 @@ from app.domain.repository.work_log_repository import (
 class CreateWorkLogBody(BaseModel):
     project_id: str
     summary: str
+    detail: str
     minutes: int
     source: str
 
@@ -26,6 +27,7 @@ class CreateWorkLogBody(BaseModel):
 class UpdateWorkLogBody(BaseModel):
     project_id: str
     summary: str
+    detail: str
     minutes: int
     source: str
 
@@ -98,6 +100,7 @@ def new_work_log_router(uc: WorkLogServiceUsecase) -> APIRouter:
                 CreateWorkLogInput(
                     project_id=body.project_id,
                     summary=body.summary,
+                    detail=body.detail,
                     minutes=body.minutes,
                     source=body.source,
                 )
@@ -123,6 +126,7 @@ def new_work_log_router(uc: WorkLogServiceUsecase) -> APIRouter:
                     id=id,
                     project_id=body.project_id,
                     summary=body.summary,
+                    detail=body.detail,
                     minutes=body.minutes,
                     source=body.source,
                 )

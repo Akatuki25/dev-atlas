@@ -34,6 +34,8 @@ message WorkLog {
   string project_id = 2;
   // @required @label 作業内容 @list primary
   string summary = 3;
+  // @label 詳細 @form textarea
+  string detail = 7;
   // @label 作業時間(分) @list secondary
   int32 minutes = 4;
   // @label 記録元
@@ -156,6 +158,7 @@ message GetWorkLogResponse {
 message CreateWorkLogRequest {
   string project_id = 1;
   string summary = 2;
+  string detail = 5;
   int32 minutes = 3;
   string source = 4;
 }
@@ -167,6 +170,7 @@ message UpdateWorkLogRequest {
   string id = 1;
   string project_id = 2;
   string summary = 3;
+  string detail = 6;
   int32 minutes = 4;
   string source = 5;
 }

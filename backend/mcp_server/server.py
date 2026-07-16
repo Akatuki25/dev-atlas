@@ -107,12 +107,13 @@ def update_progress(project_id: str, progress: int, status: str = "") -> dict:
 
 
 @mcp.tool()
-def log_work(project_id: str, summary: str, minutes: int, source: str = "mcp") -> dict:
-    """作業ログ(工数)を記録する。エージェントは作業の区切り(コミット・タスク完了時)に呼ぶ。"""
+def log_work(project_id: str, summary: str, minutes: int, detail: str = "", source: str = "mcp") -> dict:
+    """作業ログ(工数)を記録する。エージェントは作業の区切り(コミット・タスク完了時)に呼ぶ。
+    summary は一行の要約、detail は詳細(何を・なぜ・どう解決したか)を任意で。"""
     _, ws, _ = _services()
-    e = tx.run(lambda: ws.create(project_id, summary, minutes, source))
+    e = tx.run(lambda: ws.create(project_id, summary, detail, minutes, source))
     return {"id": e.id, "project_id": e.project_id, "summary": e.summary,
-            "minutes": e.minutes, "source": e.source}
+            "detail": e.detail, "minutes": e.minutes, "source": e.source}
 
 
 def _task_dict(t) -> dict:

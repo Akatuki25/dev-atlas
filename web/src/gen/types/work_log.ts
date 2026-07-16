@@ -6,6 +6,7 @@ export interface WorkLog {
   id: string;
   project_id: string;
   summary: string;
+  detail: string;
   minutes: number;
   source: string;
   created_at_unix: number;

@@ -9,6 +9,7 @@ class WorkLogDTO:
     id: str
     project_id: str
     summary: str
+    detail: str
     minutes: int
     source: str
     created_at_unix: int
@@ -19,6 +20,7 @@ class WorkLogDTO:
             id=e.id,
             project_id=e.project_id,
             summary=e.summary,
+            detail=e.detail,
             minutes=e.minutes,
             source=e.source,
             created_at_unix=int(e.created_at.timestamp()),

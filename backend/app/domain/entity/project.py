@@ -11,12 +11,12 @@ class Project(Base):
 
     id: Mapped[str] = mapped_column(String(255), primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    goal: Mapped[str] = mapped_column(String(255), nullable=False)
+    goal: Mapped[str] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(255), nullable=False)
-    progress: Mapped[int] = mapped_column(Integer, nullable=False)
-    repo_url: Mapped[str] = mapped_column(String(255), nullable=False)
-    kb_node: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    progress: Mapped[int] = mapped_column(Integer, nullable=True)
+    repo_url: Mapped[str] = mapped_column(String(255), nullable=True)
+    kb_node: Mapped[str] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
 
     @classmethod
     def new(cls, id: str, name: str, goal: str, status: str, progress: int, repo_url: str, kb_node: str, created_at: datetime) -> "Project":

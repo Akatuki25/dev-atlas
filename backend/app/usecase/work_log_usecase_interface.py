@@ -24,6 +24,7 @@ class GetWorkLogInput:
 class CreateWorkLogInput:
     project_id: str
     summary: str
+    detail: str
     minutes: int
     source: str
 
@@ -33,6 +34,7 @@ class UpdateWorkLogInput:
     id: str
     project_id: str
     summary: str
+    detail: str
     minutes: int
     source: str
 

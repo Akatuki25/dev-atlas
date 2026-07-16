@@ -44,7 +44,7 @@ class PostgresWorkLogRepository:
             self._upsert(es)
 
     def _upsert(self, es: list[WorkLog]) -> None:
-        cols = ['id', 'project_id', 'summary', 'minutes', 'source', 'created_at']
+        cols = ['id', 'project_id', 'summary', 'detail', 'minutes', 'source', 'created_at']
         vals = [{c: getattr(e, c) for c in cols} for e in es]
         stmt = pg_insert(WorkLog).values(vals)
         upd = {c: getattr(stmt.excluded, c) for c in cols if c != "id"}
@@ -59,6 +59,7 @@ class PostgresWorkLogRepository:
             raise WorkLogNotFoundError()
         obj.project_id = e.project_id
         obj.summary = e.summary
+        obj.detail = e.detail
         obj.minutes = e.minutes
         obj.source = e.source
         obj.created_at = e.created_at

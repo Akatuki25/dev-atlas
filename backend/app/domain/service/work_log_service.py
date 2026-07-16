@@ -31,13 +31,13 @@ class WorkLogService:
         self._projects = project_repo
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
-    def create(self, project_id: str, summary: str, minutes: int, source: str) -> WorkLog:
+    def create(self, project_id: str, summary: str, detail: str, minutes: int, source: str) -> WorkLog:
         # 集約間参照の失敗は「不正な入力」として ValueError に寄せる
         # (生成 handler は WorkLog系例外 + ValueError(→400) だけを捕捉するため)
         if self._projects.select_by_pk(project_id) is None:
             raise ValueError(f"project not found: {project_id}")
         _validate(minutes, source)
-        log = WorkLog.new(uuid.uuid4().hex, project_id, summary, minutes,
+        log = WorkLog.new(uuid.uuid4().hex, project_id, summary, detail, minutes,
                           source or "manual", self._clock())
         self._repo.insert(log)
         return log
@@ -51,14 +51,14 @@ class WorkLogService:
     def list_by_cursor(self, limit: int, after: str | None) -> list[WorkLog]:
         return self._repo.select_by_cursor(limit, after)
 
-    def update(self, id: str, project_id: str, summary: str, minutes: int, source: str) -> WorkLog:
+    def update(self, id: str, project_id: str, summary: str, detail: str, minutes: int, source: str) -> WorkLog:
         cur = self._repo.select_by_pk(id)
         if cur is None:
             raise WorkLogNotFoundError()
         if self._projects.select_by_pk(project_id) is None:
             raise ValueError(f"project not found: {project_id}")
         _validate(minutes, source)
-        updated = WorkLog.new(id, project_id, summary, minutes,
+        updated = WorkLog.new(id, project_id, summary, detail, minutes,
                               source or cur.source, cur.created_at)  # created_at を保持
         self._repo.update(updated)
         return updated

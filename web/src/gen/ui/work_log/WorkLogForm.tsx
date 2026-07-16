@@ -11,6 +11,7 @@ export function WorkLogForm({ id }: { id?: string }) {
   const router = useRouter();
   const [project_id, set_project_id] = useState("");
   const [summary, set_summary] = useState("");
+  const [detail, set_detail] = useState("");
   const [minutes, set_minutes] = useState("");
   const [source, set_source] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +20,7 @@ export function WorkLogForm({ id }: { id?: string }) {
     getWorkLog(id).then((v) => {
       set_project_id(String(v.project_id ?? ""));
       set_summary(String(v.summary ?? ""));
+      set_detail(String(v.detail ?? ""));
       set_minutes(String(v.minutes ?? ""));
       set_source(String(v.source ?? ""));
     }).catch(() => {});
@@ -28,7 +30,7 @@ export function WorkLogForm({ id }: { id?: string }) {
     if (!project_id.trim()) { setError("プロジェクトID is required"); return; }
     if (!summary.trim()) { setError("作業内容 is required"); return; }
     setError(null);
-    const body = { project_id, summary, minutes: Number(minutes) || 0, source };
+    const body = { project_id, summary, detail, minutes: Number(minutes) || 0, source };
     if (id) await updateWorkLog(id, body); else await createWorkLog(body);
     router.push("/work_logs");
     router.refresh();
@@ -37,6 +39,7 @@ export function WorkLogForm({ id }: { id?: string }) {
     <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-3)", maxWidth: 400 }}>
       <Field label="プロジェクトID" type="text" value={project_id} onChange={set_project_id} />
       <Field label="作業内容" type="text" value={summary} onChange={set_summary} />
+      <Field label="詳細" type="textarea" value={detail} onChange={set_detail} />
       <Field label="作業時間(分)" type="text" value={minutes} onChange={set_minutes} />
       <Field label="記録元" type="text" value={source} onChange={set_source} />
       {error && <ErrorText>{error}</ErrorText>}
