@@ -12,6 +12,7 @@ dependencies = [
     "protobuf>=5.28",
     "alembic>=1.13",
     "mcp>=1.28.1",
+    "pyjwt>=2.13.0",
 ]
 
 [dependency-groups]

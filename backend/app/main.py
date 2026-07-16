@@ -3,6 +3,7 @@
 MCP サーバー(mcp_server/server.py)を /mcp にマウントする。
 """
 from __future__ import annotations
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -19,6 +20,7 @@ from app.usecase.project_usecase import ProjectUsecase
 from app.usecase.task_usecase import TaskUsecase
 from app.usecase.work_log_usecase import WorkLogUsecase
 from mcp_server.server import mcp, build_mcp_asgi_app
+from middleware.web_auth_middleware import WebAuthMiddleware
 
 
 @asynccontextmanager
@@ -31,13 +33,15 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(title="dev-atlas", lifespan=lifespan)
 
-    # web(localhost:3000)からのブラウザ fetch を許可
+    # web(localhost:3000 / WEB_ORIGIN)からのブラウザ fetch を許可
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"],
+        allow_origins=[os.environ.get("WEB_ORIGIN", "http://localhost:3000")],
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    # Webセッション認証(AUTH_MODE=all のときだけ有効。生成handlerには触れない横断保護)
+    app.add_middleware(WebAuthMiddleware)
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
