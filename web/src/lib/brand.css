@@ -1,0 +1,40 @@
+/* 手書き(dev-atlas 所有): このアプリのブランド色。tokens.css(中立)の色値だけを上書きする。
+   構造(型スケール/余白/角丸)は tokens.css のまま。色を変えても widget/画面コードは無変更。
+   ブランド: indigo。neutral も accent 色相へわずかに寄せて統一感を出す(KB: selection-design-pattern)。 */
+:root {
+  --bg: #f7f8fc;
+  --surface: #ffffff;
+  --surface-2: #f0f1f8;
+  --border: #e3e5f0;
+  --border-strong: #ced1e2;
+  --text: #1c1d2b;
+  --text-muted: #565a72;
+  --text-faint: #9396b0;
+
+  --accent: #4f46e5;
+  --accent-soft: #e8e7fc;
+  --on-accent: #ffffff;
+
+  --shadow-sm: 0 1px 2px rgb(30 27 75 / 0.06);
+  --shadow-md: 0 4px 16px rgb(30 27 75 / 0.10);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f18;
+    --surface: #181826;
+    --surface-2: #1f2032;
+    --border: #2b2c40;
+    --border-strong: #3b3d57;
+    --text: #ecedf7;
+    --text-muted: #a2a4c0;
+    --text-faint: #6b6d88;
+
+    --accent: #8b8cff;
+    --accent-soft: #262752;
+    --on-accent: #0c0c16;
+
+    --shadow-sm: none;
+    --shadow-md: 0 4px 16px rgb(0 0 0 / 0.4);
+  }
+}

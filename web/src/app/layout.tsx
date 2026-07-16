@@ -2,6 +2,7 @@
 // tokens.css(design値)を読み込み、AppShell(サイドバー+全幅メイン)で全ページを包む。
 import type { ReactNode } from "react";
 import "../lib/tokens.css";
+import "../lib/brand.css"; // アプリ所有のブランド色(tokens の色値を上書き)。必ず tokens の後
 import { AppShell } from "../components/AppShell";
 
 export const metadata = {
