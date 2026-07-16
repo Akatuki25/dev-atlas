@@ -35,13 +35,16 @@ export function TaskForm({ id }: { id?: string }) {
     router.refresh();
   }
   return (
-    <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-3)", maxWidth: 400 }}>
+    <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-4)", maxWidth: 520, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-sm)", padding: "var(--sp-5)" }}>
       <Field label="プロジェクトID" type="text" value={project_id} onChange={set_project_id} />
       <Field label="タイトル" type="text" value={title} onChange={set_title} />
       <Field label="状態" type="text" value={status} onChange={set_status} />
       <Field label="説明" type="textarea" value={note} onChange={set_note} />
       {error && <ErrorText>{error}</ErrorText>}
-      <div><Button type="submit" variant="primary">{id ? "Update" : "Create"}</Button></div>
+      <div style={{ display: "flex", gap: "var(--sp-2)" }}>
+        <Button type="submit" variant="primary">{id ? "Update" : "Create"}</Button>
+        <Button variant="ghost" onClick={() => router.push("/tasks")}>Cancel</Button>
+      </div>
     </form>
   );
 }

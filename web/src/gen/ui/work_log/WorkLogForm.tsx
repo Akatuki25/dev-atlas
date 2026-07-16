@@ -36,14 +36,17 @@ export function WorkLogForm({ id }: { id?: string }) {
     router.refresh();
   }
   return (
-    <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-3)", maxWidth: 400 }}>
+    <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-4)", maxWidth: 520, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-sm)", padding: "var(--sp-5)" }}>
       <Field label="プロジェクトID" type="text" value={project_id} onChange={set_project_id} />
       <Field label="作業内容" type="text" value={summary} onChange={set_summary} />
       <Field label="詳細" type="textarea" value={detail} onChange={set_detail} />
       <Field label="作業時間(分)" type="text" value={minutes} onChange={set_minutes} />
       <Field label="記録元" type="text" value={source} onChange={set_source} />
       {error && <ErrorText>{error}</ErrorText>}
-      <div><Button type="submit" variant="primary">{id ? "Update" : "Create"}</Button></div>
+      <div style={{ display: "flex", gap: "var(--sp-2)" }}>
+        <Button type="submit" variant="primary">{id ? "Update" : "Create"}</Button>
+        <Button variant="ghost" onClick={() => router.push("/work_logs")}>Cancel</Button>
+      </div>
     </form>
   );
 }

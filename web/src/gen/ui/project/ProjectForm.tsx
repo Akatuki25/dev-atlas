@@ -38,7 +38,7 @@ export function ProjectForm({ id }: { id?: string }) {
     router.refresh();
   }
   return (
-    <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-3)", maxWidth: 400 }}>
+    <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-4)", maxWidth: 520, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-sm)", padding: "var(--sp-5)" }}>
       <Field label="プロジェクト名" type="text" value={name} onChange={set_name} />
       <Field label="ゴール" type="text" value={goal} onChange={set_goal} />
       <Field label="状態" type="text" value={status} onChange={set_status} />
@@ -46,7 +46,10 @@ export function ProjectForm({ id }: { id?: string }) {
       <Field label="リポジトリURL" type="text" value={repo_url} onChange={set_repo_url} />
       <Field label="KBノード" type="text" value={kb_node} onChange={set_kb_node} />
       {error && <ErrorText>{error}</ErrorText>}
-      <div><Button type="submit" variant="primary">{id ? "Update" : "Create"}</Button></div>
+      <div style={{ display: "flex", gap: "var(--sp-2)" }}>
+        <Button type="submit" variant="primary">{id ? "Update" : "Create"}</Button>
+        <Button variant="ghost" onClick={() => router.push("/projects")}>Cancel</Button>
+      </div>
     </form>
   );
 }
