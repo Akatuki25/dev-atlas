@@ -39,7 +39,7 @@ export default function ProjectsPage() {
             const minutes = logs.filter((l) => l.project_id === p.id).reduce((a, l) => a + l.minutes, 0);
             const tone = TONE[p.status] ?? "neutral";
             return (
-              <Link key={p.id} href={"/p/" + p.id} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link key={p.id} href={"/projects/" + p.id} style={{ textDecoration: "none", color: "inherit" }}>
                 <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-sm)", padding: "var(--sp-4)" }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: "var(--sp-2)", marginBottom: "var(--sp-2)" }}>
                     <span style={{ fontWeight: 700, fontSize: "var(--text-md)" }}>{p.name}</span>

@@ -54,7 +54,7 @@ message Task {
   string title = 3;
   // @required @label 状態 @list secondary
   string status = 4;
-  // @label メモ
+  // @label 説明 @form textarea
   string note = 5;
   // @timestamp
   int64 created_at_unix = 6;

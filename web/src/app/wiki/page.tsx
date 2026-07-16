@@ -30,6 +30,9 @@ export default function WikiIndex() {
   const groups = nodesByCategory();
   const counts = Object.fromEntries(groups.map((g) => [g.category, g.nodes.length]));
   const total = groups.reduce((a, g) => a + g.nodes.length, 0);
+  // ラダー(思考段階5段)に含まれないカテゴリ = 横断・参照レイヤ(pitfalls/references/domains/categories 等)
+  const ladderKeys = LADDER.map((l) => l.key);
+  const crossGroups = groups.filter((g) => !ladderKeys.includes(g.category));
 
   return (
     <Page
@@ -82,6 +85,23 @@ export default function WikiIndex() {
           })}
         </div>
         <div style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)", paddingLeft: 30, marginTop: 2 }}>具体 — 実装のなぜ</div>
+
+        {/* 思考段階(5段)の外側で全体を支える/引く横断・参照レイヤ。ここが無いと Pitfalls 等が地図から漏れる */}
+        {crossGroups.length > 0 && (
+          <div style={{ marginTop: "var(--sp-4)", paddingLeft: 30 }}>
+            <div style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)", marginBottom: "var(--sp-1)" }}>横断・参照レイヤ(全段を支える / 引く)</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--sp-2)" }}>
+              {crossGroups.map((g) => (
+                <Link key={g.category} href={"#cat-" + g.category} style={{ textDecoration: "none" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 999, padding: "3px 10px", fontSize: "var(--text-sm)", color: "var(--text)" }}>
+                    {(CATEGORY_LABEL[g.category] ?? g.category).split(" — ")[0]}
+                    <span style={{ color: "var(--text-faint)", fontVariantNumeric: "tabular-nums" }}>{g.nodes.length}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* カテゴリごとのノード一覧 */}

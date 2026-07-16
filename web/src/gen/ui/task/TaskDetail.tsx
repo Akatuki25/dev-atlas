@@ -16,7 +16,7 @@ export function TaskDetail({ id }: { id: string }) {
   return (
     <div style={{ display: "grid", gap: "var(--sp-4)" }}>
       <h2 style={{ margin: 0, fontSize: "var(--text-lg)" }}>{item.title}</h2>
-      <KVList items={[{ k: "Id", v: <>{item.id}</> }, { k: "プロジェクトID", v: <>{item.project_id}</> }, { k: "状態", v: <>{item.status}</> }, { k: "メモ", v: <>{item.note}</> }, { k: "Created At", v: <>{new Date(item.created_at_unix * 1000).toLocaleDateString()}</> }]} />
+      <KVList items={[{ k: "Id", v: <>{item.id}</> }, { k: "プロジェクトID", v: <>{item.project_id}</> }, { k: "状態", v: <>{item.status}</> }, { k: "説明", v: <>{item.note}</> }, { k: "Created At", v: <>{new Date(item.created_at_unix * 1000).toLocaleDateString()}</> }]} />
       <div style={{ display: "flex", gap: "var(--sp-3)", alignItems: "center" }}>
         <Link href={`/tasks/${id}/edit`}>Edit</Link>
         <TaskDeleteButton id={id} />

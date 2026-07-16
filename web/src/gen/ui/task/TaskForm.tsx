@@ -39,7 +39,7 @@ export function TaskForm({ id }: { id?: string }) {
       <Field label="プロジェクトID" type="text" value={project_id} onChange={set_project_id} />
       <Field label="タイトル" type="text" value={title} onChange={set_title} />
       <Field label="状態" type="text" value={status} onChange={set_status} />
-      <Field label="メモ" type="text" value={note} onChange={set_note} />
+      <Field label="説明" type="textarea" value={note} onChange={set_note} />
       {error && <ErrorText>{error}</ErrorText>}
       <div><Button type="submit" variant="primary">{id ? "Update" : "Create"}</Button></div>
     </form>

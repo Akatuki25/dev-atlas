@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import "./shell.css";
 
 const WORKSPACE = [
-  { href: "/p", label: "Hub" },
+  { href: "/", label: "Dashboard" },
   { href: "/projects", label: "Projects" },
   { href: "/tasks", label: "Tasks" },
   { href: "/work_logs", label: "Work Logs" },
@@ -15,7 +15,7 @@ const WORKSPACE = [
 const KNOWLEDGE = [{ href: "/wiki", label: "Wiki" }];
 
 function NavLink({ href, label, pathname }: { href: string; label: string; pathname: string }) {
-  const active = href === "/p" ? pathname === "/p" : pathname === href || pathname.startsWith(href + "/");
+  const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
   return (
     <Link href={href} className={"nav-link" + (active ? " active" : "")}>
       {label}
