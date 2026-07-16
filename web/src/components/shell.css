@@ -1,0 +1,106 @@
+/* 手書き(dev-atlas固有): アプリシェル。値は tokens.css の CSS 変数のみ参照。
+   hover/media query が要るのでインラインstyleでなくCSSにする。 */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+.sidebar {
+  width: 256px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  padding: var(--sp-4);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-brand {
+  font-weight: 800;
+  font-size: var(--text-lg);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--sp-5);
+  display: block;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.sidebar-group {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  margin: var(--sp-4) 0 var(--sp-1);
+}
+
+.nav-link {
+  display: block;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  line-height: 1.9;
+}
+.nav-link:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.nav-link.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* wiki の二段レイアウト(カテゴリ tree + 記事) */
+.wiki-shell {
+  display: flex;
+  align-items: stretch;
+}
+.wiki-nav {
+  width: 264px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border);
+  padding: var(--sp-4);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.wiki-cat {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text);
+  margin: var(--sp-3) 0 var(--sp-1);
+}
+.wiki-cat-sub {
+  font-weight: 400;
+  color: var(--text-faint);
+}
+.wiki-node {
+  display: block;
+  padding: 3px var(--sp-2);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: var(--text-sm);
+}
+.wiki-node:hover { background: var(--surface-2); color: var(--text); }
+.wiki-node.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.wiki-main { flex: 1; min-width: 0; }
+
+@media (max-width: 860px) {
+  .sidebar, .wiki-nav { display: none; }
+}

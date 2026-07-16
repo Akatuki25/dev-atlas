@@ -98,10 +98,14 @@ claude mcp add --transport http dev-atlas http://localhost:8000/mcp
 
 ## 動作画面
 
+サイドバー(Workspace / Knowledge)+ 全幅メインのアプリシェル。design tokens でライト/ダーク自動追従。
+
 | 画面 | |
 |---|---|
+| **Wiki**(KBを「抽象→具体」の思考段階で構造化。カテゴリtree + 記事) | ![wiki](docs/screenshots/wiki.png) |
+| Wiki 記事(大タイトル + frontmatterバッジ + wikilink) | ![wiki article](docs/screenshots/wiki-article.png) |
 | **Project Hub**(進捗・タスク・工数・KBを1画面に) | ![hub](docs/screenshots/hub.png) |
-| 同・ダークモード(design tokensで自動追従) | ![hub dark](docs/screenshots/hub-dark.png) |
+| Wiki ダークモード | ![wiki dark](docs/screenshots/wiki-dark.png) |
 | ホーム | ![home](docs/screenshots/home.png) |
 | プロジェクト一覧(優先度カードリスト・生成UI) | ![projects](docs/screenshots/projects.png) |
 | 作業ログ登録フォーム(生成UI・validation付) | ![worklog form](docs/screenshots/worklog-form.png) |

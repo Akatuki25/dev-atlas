@@ -30,7 +30,9 @@
   --text-sm: 13px;
   --text-md: 15px;
   --text-lg: 18px;
-  --text-xl: 24px;
+  --text-xl: 22px;
+  --text-2xl: 26px;
+  --text-3xl: 32px;
 
   /* spacing (4px base) / radius / shadow */
   --sp-1: 4px;
