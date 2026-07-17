@@ -1,67 +1,60 @@
-# dev-atlas デプロイ + KB 手順
+# dev-atlas デプロイ状況 + 残り手順
 
-個人利用・複数端末・KBは常に最新。**KB は fs に置かず GitHub API 経由**で read(将来 write も)。
-構成: **web = Vercel(Next.js)** / **api + Postgres = Railway**。
+**全部 Railway・単一プロジェクト**(config の単一ソース性が高い)。KB は **fs に置かず GitHub API 直読み**。
 
-## KB の扱い(重要 = この設計の肝)
+## 稼働中(2026-07-17 デプロイ済み)
 
-- KB の真実 = private repo `Akatuki25/knowledge_base`。編集は各端末のローカル(knowledge-base skill)→ push。
-- **web も api も、KB を GitHub API(tree/contents)で読む**(`KB_GITHUB_TOKEN` を持たせる)。
-  - fs / git clone / pull / volume / CI通知 が一切不要 → Vercel(サーバレス)でも Railway でも同一に動く。
-  - 読むたびに GitHub の最新(pull間隔のラグ無し)。`KB_CACHE_SECONDS`(既定300s)でAPI呼びを抑制。
-- 複数端末 = 各端末が KB を git で編集/push、閲覧は web(任意の端末のブラウザ)。
+Railway プロジェクト `dev-atlas`(あかつき's Projects):
+| サービス | URL / 状態 |
+|---|---|
+| **api**(FastAPI + MCP) | https://api-production-c07a.up.railway.app — healthz 200 / CRUD+DB OK / MCP(トークン保護) |
+| **web**(Next.js) | https://web-production-79feb.up.railway.app — 200 |
+| **Postgres** | 稼働(マイグレーション適用済み) |
 
-### 必要トークン
-- **read 用**(今): fine-grained PAT(Repository = knowledge_base のみ / Contents: **Read-only**)。
-  web と api の `KB_GITHUB_TOKEN` に設定。
-- write(将来 MCP から KB 編集する時)は Contents: Read **and write** の PAT に差し替え。
+現状は **auth off**・**KB トークン未設定**(wiki は「KB を読めません」表示)。CRUD/Dashboard/MCP は動く。
 
-## 1. Vercel(web)
+## KB の扱い(この設計の肝)
+- 真実 = private repo `Akatuki25/knowledge_base`(main)。編集はローカル(skill)→ push。
+- api も web も **GitHub API(tree/contents)をトークンで読む**(`KB_GITHUB_TOKEN`)。fs/clone/pull/CI 不要。
+- 更新の行き渡り: push すれば、読むたび最新(`KB_CACHE_SECONDS` 既定300sキャッシュ)。**単一ソース=GitHub main**。
 
-Next.js は Vercel が本拠。web/ をルートに Vercel プロジェクトを作る。
-- Root Directory: `web`
-- Environment Variables:
-  ```
-  KB_GITHUB_TOKEN = <read PAT>
-  KB_REPO = Akatuki25/knowledge_base
-  NEXT_PUBLIC_API_BASE = https://<api ドメイン>          # Railway の api
-  NEXT_PUBLIC_AUTH_ENABLED = 1
-  NEXTAUTH_SECRET = <openssl rand -base64 32>
-  NEXTAUTH_URL = https://<web ドメイン>.vercel.app
-  GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
-  ALLOWED_EMAILS = you@example.com
-  ```
-- CLI 例: `cd web && vercel --prod`(初回は `vercel link` / env は `vercel env add`)。
+## 残り2ステップ(あなた)
 
-## 2. Railway(api + Postgres)
+### ① KB を表示する → read PAT を設定(wiki 復活)
+1. GitHub → fine-grained PAT: Repository = **knowledge_base のみ** / Contents: **Read-only**。
+2. 両サービスに設定(CLI 例):
+   ```
+   railway variables --service api --set 'KB_GITHUB_TOKEN=<PAT>'
+   railway variables --service web --set 'KB_GITHUB_TOKEN=<PAT>'
+   ```
+   ※ 単一ソース化するなら Railway の **Shared Variables** に `KB_GITHUB_TOKEN` を置き、両サービスから参照。
 
-Railway プロジェクト `dev-atlas` は作成済み(Postgres 稼働)。api は **backend/ の Dockerfile** でビルド。
-- **api サービスの Root Directory = `backend`** に設定(★これを設定しないと Railway が repo ルートを
-  Railpack で解析して失敗する。今回のビルド失敗の原因)。
-- api の Variables:
-  ```
-  DATABASE_URL = postgresql+psycopg://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}
-  KB_GITHUB_TOKEN = <read PAT>
-  KB_REPO = Akatuki25/knowledge_base
-  MCP_TOKEN = <openssl rand -hex 32>
-  AUTH_MODE = all
-  NEXTAUTH_SECRET = （web と同じ）
-  ALLOWED_EMAILS = you@example.com
-  WEB_ORIGIN = https://<web ドメイン>.vercel.app
-  ```
-  (旧 KB_REPO_URL / KB_REFRESH_TOKEN / KB_PATH は不要。設定済みなら削除)
-- Postgres は Railway プラグイン。api がマイグレーションを起動時適用。
+### ② ログインを有効化 → Google OAuth + フラグ
+1. GCP で OAuth クライアント作成 → 承認済みリダイレクト URI:
+   `https://web-production-79feb.up.railway.app/api/auth/callback/google`
+2. 変数(生成済みの共有 secret は下記「値」参照):
+   ```
+   # api
+   railway variables --service api --set 'AUTH_MODE=all'
+   # web(NEXT_PUBLIC_AUTH_ENABLED はビルドarg → 再デプロイで焼き込み)
+   railway variables --service web \
+     --set 'NEXT_PUBLIC_AUTH_ENABLED=1' \
+     --set 'GOOGLE_CLIENT_ID=<...>' --set 'GOOGLE_CLIENT_SECRET=<...>' \
+     --set 'ALLOWED_EMAILS=あなたのGmail'
+   railway variables --service api --set 'ALLOWED_EMAILS=あなたのGmail'
+   railway up --path-as-root web --service web --ci   # 再ビルド(NEXT_PUBLIC_ 焼き込み)
+   ```
 
-## 3. Google OAuth(NextAuth)
+## 生成済みの共有 secret(api/web で同一)
+```
+NEXTAUTH_SECRET = YULwC19t9A2+7IZtVEnAYaIbSjHg+XYxY+sQ6FkrWZM=
+MCP_TOKEN(api) = a22c247cf56722818750de29cc22f370817c219755ae736436715e0b10e7aa53
+```
+MCP 登録: `claude mcp add --transport http dev-atlas https://api-production-c07a.up.railway.app/mcp --header "Authorization: Bearer <MCP_TOKEN>"`
 
-GCP で OAuth クライアント作成 → 承認済みリダイレクト URI に
-`https://<web ドメイン>.vercel.app/api/auth/callback/google` → `GOOGLE_CLIENT_ID/SECRET` を Vercel(web)に。
-
-## 4. 段階
-1. まず AUTH off で起動確認してもよい(api: `AUTH_MODE=off` / web: `NEXT_PUBLIC_AUTH_ENABLED=0`)→ /wiki が
-   KB を GitHub API で読めるか、CRUD/MCP が動くか確認 → その後 OAuth を入れて auth on。
-2. 疎通: web `/wiki` に 110 ノード出る / api `/healthz` 200 / MCP `claude mcp add --transport http dev-atlas https://<api>/mcp`(MCP_TOKEN 必要)。
-
-## メモ
-- KB write-back(サーバ→KB)は将来: Contents API PUT で commit。read PAT を write PAT に替え、MCP に `push_kb_node` を足す。
-- Railway CLI は非対話(TTY)前提の操作が多く、Root Directory 等はダッシュボードが確実。
+## Railway 運用メモ(CLI 完結でやった)
+- モノレポは `railway up --path-as-root backend --service api --ci`(サブをビルド根に)。`./backend` は不可。
+- 502(ビルド成功なのに無応答)= `$PORT` 不一致 → アプリは `$PORT` で待受(修正済み)。
+- ビルドログは非TTYシェルに出ない → 失敗原因はダッシュボード。状態は `railway status --json`。
+- config 単一ソース: 全部 1 Railway プロジェクト。共有値は Shared Variables に寄せると drift しない。
+- KB write-back(将来): read PAT を write PAT に替え、MCP に push_kb_node(Contents API PUT)。
