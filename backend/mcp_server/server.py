@@ -11,16 +11,13 @@ from __future__ import annotations
 
 import hmac
 import os
-import re
-from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
+from app import kb_github
 from app.infra.db import tx
 
 mcp = FastMCP("dev-atlas", stateless_http=True, streamable_http_path="/")
-
-KB_PATH = Path(os.environ.get("KB_PATH", "/kb"))
 
 
 def _services():
@@ -159,41 +156,17 @@ def complete_task(task_id: str) -> dict:
 @mcp.tool()
 def search_kb(query: str, limit: int = 10) -> list[dict]:
     """KB(開発ナレッジwiki)を全文検索し、ヒットしたノードとマッチ行を返す。"""
-    if not KB_PATH.exists():
-        return [{"error": f"KB not mounted at {KB_PATH}"}]
-    pat = re.compile(re.escape(query), re.IGNORECASE)
-    hits: list[dict] = []
-    for md in sorted(KB_PATH.rglob("*.md")):
-        if any(part.startswith(".") for part in md.parts):
-            continue
-        try:
-            lines = md.read_text(encoding="utf-8").splitlines()
-        except OSError:
-            continue
-        matched = [ln.strip() for ln in lines if pat.search(ln)][:2]
-        if matched:
-            hits.append({"node": str(md.relative_to(KB_PATH)), "lines": matched})
-            if len(hits) >= limit:
-                break
-    return hits
+    if not kb_github.available():
+        return [{"error": "KB_GITHUB_TOKEN 未設定(GitHub API 経由の KB 読み取り)"}]
+    return kb_github.search(query, limit)
 
 
 @mcp.tool()
 def read_kb_node(name: str) -> str:
     """KBノードを名前(ファイル名 or frontmatter id)で読み、本文(Markdown)を返す。"""
-    if not KB_PATH.exists():
-        return f"KB not mounted at {KB_PATH}"
-    target = name.strip().lower().removesuffix(".md")
-    for md in sorted(KB_PATH.rglob("*.md")):
-        if any(part.startswith(".") for part in md.parts):
-            continue
-        if md.stem.lower() == target:
-            return md.read_text(encoding="utf-8")
-    for md in sorted(KB_PATH.rglob("*.md")):
-        head = md.read_text(encoding="utf-8")[:2000]
-        if re.search(rf"^id:\s*{re.escape(target)}\s*$", head, re.IGNORECASE | re.MULTILINE):
-            return md.read_text(encoding="utf-8")
-    return f"KB node not found: {name}"
+    if not kb_github.available():
+        return "KB_GITHUB_TOKEN 未設定"
+    return kb_github.read_node(name) or f"KB node not found: {name}"
 
 
 class _McpTokenGuard:

@@ -18,16 +18,16 @@ function nodeHref(relPath: string): string {
   return "/wiki/p/" + relPath.replace(/\.md$/, "").split("/").map(encodeURIComponent).join("/");
 }
 
-export default function WikiIndex() {
-  if (!kbAvailable()) {
+export default async function WikiIndex() {
+  if (!(await kbAvailable())) {
     return (
       <Page title="Wiki" description="開発ナレッジベース(knowledge_base)を wiki 形式で閲覧する">
-        <EmptyState message="KB がマウントされていません。KB_PATH(既定 /kb)に knowledge_base をマウントしてください(README 参照)。" />
+        <EmptyState message="KB を読めません。KB_GITHUB_TOKEN(private repo の read トークン)を設定してください(DEPLOY.md 参照)。" />
       </Page>
     );
   }
 
-  const groups = nodesByCategory();
+  const groups = await nodesByCategory();
   const counts = Object.fromEntries(groups.map((g) => [g.category, g.nodes.length]));
   const total = groups.reduce((a, g) => a + g.nodes.length, 0);
   // ラダー(思考段階5段)に含まれないカテゴリ = 横断・参照レイヤ(pitfalls/references/domains/categories 等)

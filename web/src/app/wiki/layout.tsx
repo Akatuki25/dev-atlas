@@ -3,11 +3,11 @@ import type { ReactNode } from "react";
 import { kbAvailable, nodesByCategory } from "../../lib/kb";
 import { WikiNav } from "./WikiNav";
 
-export const dynamic = "force-dynamic"; // KB はマウントされた実ファイルを毎回読む
+export const dynamic = "force-dynamic"; // KB は GitHub API を毎回読む(キャッシュは lib/kb 側)
 
-export default function WikiLayout({ children }: { children: ReactNode }) {
-  const groups = kbAvailable()
-    ? nodesByCategory().map((g) => ({
+export default async function WikiLayout({ children }: { children: ReactNode }) {
+  const groups = (await kbAvailable())
+    ? (await nodesByCategory()).map((g) => ({
         category: g.category,
         label: g.label,
         nodes: g.nodes.map((n) => ({ relPath: n.relPath, name: n.name, title: n.title })),

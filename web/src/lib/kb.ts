@@ -1,31 +1,30 @@
-// 手書き: KB(knowledge_base) 読み取り層。サーバーコンポーネント専用。
-// KB_PATH(コンテナでは /kb に read-only マウント)配下の Markdown wiki を読む。
-// [[wikilink]] は /wiki/n/<name> へのリンクに変換し、名前解決はファイル名 / frontmatter id / aliases で行う。
+// 手書き: KB(knowledge_base)読み取り層。**GitHub API 経由**(fs に置かない)。
+// private repo のトークンで tree/contents を読む → Vercel(サーバレス)でも Railway でも同一に動く。
+// 読むたびに最新(pull間隔のラグ無し)。Next の fetch キャッシュ(revalidate)で GitHub を叩きすぎない。
 import "server-only";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { join, normalize, resolve } from "node:path";
 
-const KB_ROOT = resolve(process.env.KB_PATH ?? "/kb");
+const REPO = process.env.KB_REPO ?? "Akatuki25/knowledge_base";
+const BRANCH = process.env.KB_BRANCH ?? "main";
+const TOKEN = process.env.KB_GITHUB_TOKEN ?? "";
+const REVALIDATE = Number(process.env.KB_CACHE_SECONDS ?? "300"); // 既定5分キャッシュ
 
 export type KbPage = {
   relPath: string;
   title: string;
   frontmatter: Record<string, string>;
-  /** [[wikilink]] 変換済みの Markdown 本文 */
-  body: string;
+  body: string; // [[wikilink]] 変換済み
 };
 
 export type KbNode = {
   relPath: string;
-  name: string;          // ファイル名(拡張子なし)= wikilink の解決キー
+  name: string;
   title: string;
-  category: string;      // wiki/<category>/... の <category>(無ければ "misc")
-  type: string;          // frontmatter type(principle/selection/...)
+  category: string;
+  type: string;
   status: string;
-  description: string;   // TL;DR or 本文先頭の一文(一覧カード用)
+  description: string;
 };
 
-// KB の「抽象 → 具体」の思考段階(INDEX.md の順序に対応)。サイドバー/一覧はこの順で並べる。
 export const CATEGORY_ORDER = [
   "principles", "selection", "architecture", "tech",
   "projects", "references", "pitfalls", "domains", "categories",
@@ -44,82 +43,43 @@ export const CATEGORY_LABEL: Record<string, string> = {
   misc: "その他",
 };
 
-function firstDescription(body: string): string {
-  const lines = body.split("\n");
-  // "## TL;DR" 直後の最初の非空行を優先
-  const tldr = lines.findIndex((l) => /^#+\s*TL;DR/i.test(l.trim()));
-  const start = tldr >= 0 ? tldr + 1 : 0;
-  for (let i = start; i < lines.length; i++) {
-    const t = lines[i].trim();
-    if (!t || t.startsWith("#") || t.startsWith("---")) continue;
-    // markdown 記号を軽く除去して1文に
-    return t.replace(/[*_`>[\]]/g, "").replace(/\(\/wiki[^)]*\)/g, "").slice(0, 140);
-  }
-  return "";
+function ghHeaders(raw = false): HeadersInit {
+  return {
+    Authorization: `Bearer ${TOKEN}`,
+    Accept: raw ? "application/vnd.github.raw" : "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
 }
 
-function categoryOf(relPath: string): string {
-  const parts = relPath.split("/");
-  const wi = parts.indexOf("wiki");
-  return wi >= 0 && parts[wi + 1] && parts.length > wi + 2 ? parts[wi + 1] : "misc";
+export async function kbAvailable(): Promise<boolean> {
+  if (!TOKEN) return false;
+  return (await listPaths()).length > 0;
 }
 
-/** 全ノードを frontmatter + 説明つきで返す(一覧・サイドバー用) */
-export function listNodes(): KbNode[] {
-  if (!kbAvailable()) return [];
-  return listPages()
-    .filter((rel) => rel !== "INDEX.md" && !rel.endsWith("MEMORY.md") && !rel.endsWith("TODO.md"))
-    .map((rel) => {
-      const { fm, body } = parseFrontmatter(readFileSync(join(KB_ROOT, rel), "utf8"));
-      const name = rel.split("/").pop()!.replace(/\.md$/, "");
-      return {
-        relPath: rel,
-        name,
-        title: fm.title ?? name,
-        category: categoryOf(rel),
-        type: fm.type ?? "",
-        status: fm.status ?? "",
-        description: firstDescription(body),
-      };
-    });
+/** repo の md ファイルパス一覧(tree API 1回)。 */
+async function listPaths(): Promise<string[]> {
+  if (!TOKEN) return [];
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`,
+    { headers: ghHeaders(), next: { revalidate: REVALIDATE } },
+  );
+  if (!res.ok) return [];
+  const data = (await res.json()) as { tree?: { path: string; type: string }[] };
+  return (data.tree ?? [])
+    .filter((t) => t.type === "blob" && t.path.endsWith(".md"))
+    .map((t) => t.path)
+    .sort();
 }
 
-/** カテゴリ順(抽象→具体)にグループ化 */
-export function nodesByCategory(): { category: string; label: string; nodes: KbNode[] }[] {
-  const nodes = listNodes();
-  const order = [...CATEGORY_ORDER, "misc"];
-  const groups = new Map<string, KbNode[]>();
-  for (const n of nodes) {
-    if (!groups.has(n.category)) groups.set(n.category, []);
-    groups.get(n.category)!.push(n);
-  }
-  return order
-    .filter((c) => groups.has(c))
-    .map((c) => ({
-      category: c,
-      label: CATEGORY_LABEL[c] ?? c,
-      nodes: groups.get(c)!.sort((a, b) => a.title.localeCompare(b.title)),
-    }));
-}
-
-export function kbAvailable(): boolean {
-  return existsSync(KB_ROOT);
-}
-
-function walk(dir: string, out: string[] = []): string[] {
-  for (const name of readdirSync(dir)) {
-    if (name.startsWith(".")) continue;
-    const abs = join(dir, name);
-    const st = statSync(abs);
-    if (st.isDirectory()) walk(abs, out);
-    else if (name.endsWith(".md")) out.push(abs.slice(KB_ROOT.length + 1));
-  }
-  return out;
-}
-
-export function listPages(): string[] {
-  if (!kbAvailable()) return [];
-  return walk(KB_ROOT).sort();
+/** 生 Markdown を取得(contents API raw)。存在しなければ null。 */
+async function readRaw(rel: string): Promise<string | null> {
+  if (!TOKEN) return null;
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${encodeURI(rel)}?ref=${BRANCH}`,
+    { headers: ghHeaders(true), next: { revalidate: REVALIDATE } },
+  );
+  if (!res.ok) return null;
+  return res.text();
 }
 
 function parseFrontmatter(raw: string): { fm: Record<string, string>; body: string } {
@@ -141,31 +101,79 @@ function convertWikilinks(md: string): string {
   });
 }
 
-/** パストラバーサルを拒否して KB 配下の .md を読む */
-export function readPage(rel: string): KbPage | null {
-  const abs = resolve(KB_ROOT, normalize(rel));
-  if (!abs.startsWith(KB_ROOT + "/") || !abs.endsWith(".md") || !existsSync(abs)) return null;
-  const { fm, body } = parseFrontmatter(readFileSync(abs, "utf8"));
-  const base = rel.split("/").pop()!.replace(/\.md$/, "");
-  return {
-    relPath: abs.slice(KB_ROOT.length + 1),
-    title: fm.title ?? base,
-    frontmatter: fm,
-    body: convertWikilinks(body),
-  };
+function firstDescription(body: string): string {
+  const lines = body.split("\n");
+  const tldr = lines.findIndex((l) => /^#+\s*TL;DR/i.test(l.trim()));
+  const start = tldr >= 0 ? tldr + 1 : 0;
+  for (let i = start; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (!t || t.startsWith("#") || t.startsWith("---")) continue;
+    return t.replace(/[*_`>[\]]/g, "").replace(/\(\/wiki[^)]*\)/g, "").slice(0, 140);
+  }
+  return "";
 }
 
-/** [[name]] の解決: ファイル名 → frontmatter id → aliases の順で探す */
-export function resolveName(name: string): string | null {
+function categoryOf(relPath: string): string {
+  const parts = relPath.split("/");
+  const wi = parts.indexOf("wiki");
+  return wi >= 0 && parts[wi + 1] && parts.length > wi + 2 ? parts[wi + 1] : "misc";
+}
+
+/** 1ノードを読む(パストラバーサル不要 = GitHub 側で解決)。 */
+export async function readPage(rel: string): Promise<KbPage | null> {
+  if (!rel.endsWith(".md")) return null;
+  const raw = await readRaw(rel);
+  if (raw == null) return null;
+  const { fm, body } = parseFrontmatter(raw);
+  const base = rel.split("/").pop()!.replace(/\.md$/, "");
+  return { relPath: rel, title: fm.title ?? base, frontmatter: fm, body: convertWikilinks(body) };
+}
+
+/** 全ノードを frontmatter + 説明つきで(index/サイドバー用)。各ファイルを並列取得(キャッシュ有)。 */
+export async function listNodes(): Promise<KbNode[]> {
+  const paths = (await listPaths()).filter(
+    (rel) => rel !== "INDEX.md" && !rel.endsWith("MEMORY.md") && !rel.endsWith("TODO.md"),
+  );
+  const nodes = await Promise.all(paths.map(async (rel) => {
+    const raw = (await readRaw(rel)) ?? "";
+    const { fm, body } = parseFrontmatter(raw);
+    const name = rel.split("/").pop()!.replace(/\.md$/, "");
+    return {
+      relPath: rel, name, title: fm.title ?? name, category: categoryOf(rel),
+      type: fm.type ?? "", status: fm.status ?? "", description: firstDescription(body),
+    };
+  }));
+  return nodes;
+}
+
+export async function nodesByCategory(): Promise<{ category: string; label: string; nodes: KbNode[] }[]> {
+  const nodes = await listNodes();
+  const order = [...CATEGORY_ORDER, "misc"];
+  const groups = new Map<string, KbNode[]>();
+  for (const n of nodes) {
+    if (!groups.has(n.category)) groups.set(n.category, []);
+    groups.get(n.category)!.push(n);
+  }
+  return order
+    .filter((c) => groups.has(c))
+    .map((c) => ({
+      category: c, label: CATEGORY_LABEL[c] ?? c,
+      nodes: groups.get(c)!.sort((a, b) => a.title.localeCompare(b.title)),
+    }));
+}
+
+/** [[name]] の解決: ファイル名 → frontmatter id → aliases。ファイル名一致はtreeだけで済む(read不要)。 */
+export async function resolveName(name: string): Promise<string | null> {
   const target = name.trim().toLowerCase();
-  const pages = listPages();
-  for (const rel of pages) {
+  const paths = await listPaths();
+  for (const rel of paths) {
     const base = rel.split("/").pop()!.replace(/\.md$/, "").toLowerCase();
     if (base === target) return rel;
   }
-  for (const rel of pages) {
-    const raw = readFileSync(join(KB_ROOT, rel), "utf8").slice(0, 2000);
-    const { fm } = parseFrontmatter(raw);
+  for (const rel of paths) {
+    const raw = await readRaw(rel);
+    if (!raw) continue;
+    const { fm } = parseFrontmatter(raw.slice(0, 2000));
     if (fm.id?.toLowerCase() === target) return rel;
     if (fm.aliases?.toLowerCase().includes(`"${target}"`)) return rel;
   }

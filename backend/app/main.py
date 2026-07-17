@@ -3,12 +3,10 @@
 MCP サーバー(mcp_server/server.py)を /mcp にマウントする。
 """
 from __future__ import annotations
-import hmac
 import os
-import subprocess
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.di.handlers import register_routers
@@ -48,27 +46,6 @@ def create_app() -> FastAPI:
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok"}
-
-    @app.post("/internal/kb-refresh")
-    def kb_refresh(x_refresh_token: str = Header(default="")) -> dict[str, str]:
-        """KB を private remote から pull する(CI の GitHub Actions が push 時に叩く)。
-        KB_REFRESH_TOKEN 共有トークンで保護。未設定なら無効(404)。read-only 同期。"""
-        expected = os.environ.get("KB_REFRESH_TOKEN")
-        if not expected:
-            raise HTTPException(status_code=404, detail="kb-refresh disabled")
-        if not hmac.compare_digest(x_refresh_token, expected):
-            raise HTTPException(status_code=401, detail="invalid refresh token")
-        kb_path = os.environ.get("KB_PATH", "/kb")
-        if not os.path.isdir(os.path.join(kb_path, ".git")):
-            raise HTTPException(status_code=409, detail="KB is not a git clone (mounted?)")
-        try:
-            out = subprocess.run(
-                ["git", "-C", kb_path, "pull", "--ff-only"],
-                capture_output=True, text=True, timeout=30, check=True,
-            )
-        except subprocess.CalledProcessError as e:
-            raise HTTPException(status_code=500, detail=(e.stderr or str(e))[:300]) from e
-        return {"status": "ok", "git": out.stdout.strip()[:200]}
 
     project_repo = new_postgres_project_repository()
     task_repo = new_postgres_task_repository()

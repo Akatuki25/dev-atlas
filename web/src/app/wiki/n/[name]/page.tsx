@@ -4,8 +4,8 @@ import { resolveName } from "../../../../lib/kb";
 
 export const dynamic = "force-dynamic";
 
-export default function WikiName({ params }: { params: { name: string } }) {
-  const rel = resolveName(decodeURIComponent(params.name));
+export default async function WikiName({ params }: { params: { name: string } }) {
+  const rel = await resolveName(decodeURIComponent(params.name));
   if (!rel) notFound();
   redirect("/wiki/p/" + rel.split("/").map(encodeURIComponent).join("/"));
 }
