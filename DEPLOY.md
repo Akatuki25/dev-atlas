@@ -13,10 +13,18 @@ Railway プロジェクト `dev-atlas`(あかつき's Projects):
 
 現状は **auth off**・**KB トークン未設定**(wiki は「KB を読めません」表示)。CRUD/Dashboard/MCP は動く。
 
-## KB の扱い(この設計の肝)
-- 真実 = private repo `Akatuki25/knowledge_base`(main)。編集はローカル(skill)→ push。
-- api も web も **GitHub API(tree/contents)をトークンで読む**(`KB_GITHUB_TOKEN`)。fs/clone/pull/CI 不要。
-- 更新の行き渡り: push すれば、読むたび最新(`KB_CACHE_SECONDS` 既定300sキャッシュ)。**単一ソース=GitHub main**。
+## マルチユーザー(テナント分離)
+- Project/Task/WorkLog は proto の `@owned` で **owner_email 列**を持ち、ログインユーザーごとに分離。
+  principal は pure-ASGI `TenancyMiddleware` が JWT から解決し `owner_scope` で全リクエストに張る。
+- **KB は各ユーザーが自分の PAT/repo を `/settings` で登録**(per-user)。PAT は `SECRET_ENC_KEY`(Fernet)で
+  暗号化して DB 保存し、`/api/kb/*` が復号して**そのユーザーの**KB を GitHub API で読む。web は backend 経由(PATはフロントに出ない)。
+- **MCP もユーザー単位**: `/settings` で発行される mcp_token で本人識別 → 本人の Project/Task/KB のみ操作。
+- 秘密の単一ソース: `SECRET_ENC_KEY`(暗号鍵)/`NEXTAUTH_SECRET`(セッション鍵)は Railway に設定。
+  `KB_GITHUB_TOKEN` env は**使わない**(完全 per-user。設定すると未構成ユーザーの共有フォールバックになる)。
+
+## KB の中身(真実の所在)
+- 真実 = 各ユーザーの private repo(例 `Akatuki25/knowledge_base` main)。編集はローカル(skill)→ push。
+- 読むたび最新(backend の per-user TTL キャッシュ)。web は `no-store`(ユーザー跨ぎのキャッシュ漏洩を防ぐ)。
 
 ## 認証の作り(公開防止の肝)
 KB を wiki 描画するのは web の **server component**。守りは2箇所でサーバ検証(クライアント隠しではない):
