@@ -30,6 +30,9 @@ services:
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
       # MCP は共有トークンで守る(未設定ならローカル用に素通し)
       MCP_TOKEN: ${MCP_TOKEN:-}
+      # KB 同期(デプロイ時のみ。未設定ならローカルは下のマウントを使う)
+      KB_REPO_URL: ${KB_REPO_URL:-}
+      KB_REFRESH_TOKEN: ${KB_REFRESH_TOKEN:-}
     volumes:
       - ${KB_HOST_PATH:-./examples/kb-sample}:/kb:ro
     depends_on:
@@ -56,6 +59,9 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
+      # KB 同期(デプロイ時のみ。未設定ならローカルは下のマウントを使う)
+      KB_REPO_URL: ${KB_REPO_URL:-}
+      KB_REFRESH_TOKEN: ${KB_REFRESH_TOKEN:-}
     volumes:
       - ${KB_HOST_PATH:-./examples/kb-sample}:/kb:ro
     depends_on:

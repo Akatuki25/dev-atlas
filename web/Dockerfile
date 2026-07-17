@@ -16,8 +16,13 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
 
+# git: KB(knowledge_base private repo)の clone/pull に使う
+RUN apk add --no-cache git
+
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY scripts/kb-sync.sh ./scripts/kb-sync.sh
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+# 起動時に KB を同期(KB_REPO_URL 未設定なら no-op)してから Next standalone を起動
+CMD ["sh", "-c", "sh scripts/kb-sync.sh; node server.js"]

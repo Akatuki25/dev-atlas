@@ -14,6 +14,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // 認証自身のルートと静的アセットは除外
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+  // API ルート(自前でトークン保護)と静的アセットは除外。ページ遷移のみゲートする
+  matcher: ["/((?!api/|_next/static|_next/image|favicon.ico).*)"],
 };

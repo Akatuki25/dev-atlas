@@ -20,6 +20,7 @@ ALGORITHM = "HS256"
 EXEMPT_PREFIXES = (
     "/healthz",
     "/mcp",
+    "/internal/",  # サーバ間(CI)呼び出し。独自トークンで保護するため session 認証は免除
     "/docs",
     "/redoc",
     "/openapi.json",
