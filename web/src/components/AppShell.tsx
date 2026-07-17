@@ -13,6 +13,7 @@ const WORKSPACE = [
   { href: "/work_logs", label: "Work Logs" },
 ];
 const KNOWLEDGE = [{ href: "/wiki", label: "Wiki" }];
+const ACCOUNT = [{ href: "/settings", label: "Settings" }];
 
 function NavLink({ href, label, pathname }: { href: string; label: string; pathname: string }) {
   const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
@@ -33,6 +34,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         {WORKSPACE.map((l) => <NavLink key={l.href} {...l} pathname={pathname} />)}
         <div className="sidebar-group">Knowledge</div>
         {KNOWLEDGE.map((l) => <NavLink key={l.href} {...l} pathname={pathname} />)}
+        <div className="sidebar-group">Account</div>
+        {ACCOUNT.map((l) => <NavLink key={l.href} {...l} pathname={pathname} />)}
       </aside>
       <main className="main">{children}</main>
     </div>

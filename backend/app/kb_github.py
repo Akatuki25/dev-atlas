@@ -1,121 +1,123 @@
 """KB(knowledge_base)を GitHub API 経由で読む(fs に置かない)。
 
-MCP の search_kb / read_kb_node が使う。web の lib/kb.ts と同じ思想:
-private repo のトークンで tree/contents を読む → Vercel でも Railway でも同一に動く。
-in-process TTL キャッシュで GitHub を叩きすぎない。read-only。
+マルチユーザー: token/repo/branch は**ユーザーごと**(UserSetting)。
+呼び出し側が KbClient を作る(または get_client でメモ化取得)。
+キャッシュは (token, repo, branch) 単位 = 他ユーザーの内容が混ざらない。read-only。
 """
 from __future__ import annotations
 
 import json
-import os
 import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import quote
 
-REPO = os.environ.get("KB_REPO", "Akatuki25/knowledge_base")
-BRANCH = os.environ.get("KB_BRANCH", "main")
-CACHE_TTL = int(os.environ.get("KB_CACHE_SECONDS", "300"))
-
-_cache: dict[str, tuple[float, object]] = {}
+CACHE_TTL = 300
 
 
-def _token() -> str:
-    return os.environ.get("KB_GITHUB_TOKEN", "")
+class KbClient:
+    def __init__(self, token: str, repo: str, branch: str = "main", cache_ttl: int = CACHE_TTL) -> None:
+        self.token = token or ""
+        self.repo = repo or ""
+        self.branch = branch or "main"
+        self.cache_ttl = cache_ttl
+        self._cache: dict[str, tuple[float, object]] = {}
 
+    def available(self) -> bool:
+        return bool(self.token and self.repo)
 
-def available() -> bool:
-    return bool(_token())
+    def _get(self, url: str, raw: bool) -> bytes | None:
+        req = urllib.request.Request(url)
+        req.add_header("Authorization", f"Bearer {self.token}")
+        req.add_header("Accept", "application/vnd.github.raw" if raw else "application/vnd.github+json")
+        req.add_header("X-GitHub-Api-Version", "2022-11-28")
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                return r.read()
+        except (urllib.error.URLError, TimeoutError):
+            return None
 
+    def _cached(self, key: str, fn):
+        now = time.time()
+        hit = self._cache.get(key)
+        if hit and now - hit[0] < self.cache_ttl:
+            return hit[1]
+        val = fn()
+        self._cache[key] = (now, val)
+        return val
 
-def _get(url: str, raw: bool) -> bytes | None:
-    req = urllib.request.Request(url)
-    req.add_header("Authorization", f"Bearer {_token()}")
-    req.add_header("Accept", "application/vnd.github.raw" if raw else "application/vnd.github+json")
-    req.add_header("X-GitHub-Api-Version", "2022-11-28")
-    try:
-        with urllib.request.urlopen(req, timeout=15) as r:
-            return r.read()
-    except (urllib.error.URLError, TimeoutError):
-        return None
-
-
-def _cached(key: str, fn):
-    now = time.time()
-    hit = _cache.get(key)
-    if hit and now - hit[0] < CACHE_TTL:
-        return hit[1]
-    val = fn()
-    _cache[key] = (now, val)
-    return val
-
-
-def list_paths() -> list[str]:
-    """md ファイルパス一覧(tree API 1回)。"""
-    if not _token():
-        return []
-
-    def fetch():
-        body = _get(f"https://api.github.com/repos/{REPO}/git/trees/{BRANCH}?recursive=1", raw=False)
-        if not body:
+    def list_paths(self) -> list[str]:
+        if not self.available():
             return []
-        tree = json.loads(body).get("tree", [])
-        return sorted(t["path"] for t in tree if t.get("type") == "blob" and t["path"].endswith(".md"))
 
-    return _cached("paths", fetch)
+        def fetch():
+            body = self._get(
+                f"https://api.github.com/repos/{self.repo}/git/trees/{self.branch}?recursive=1", raw=False)
+            if not body:
+                return []
+            tree = json.loads(body).get("tree", [])
+            return sorted(t["path"] for t in tree if t.get("type") == "blob" and t["path"].endswith(".md"))
 
+        return self._cached("paths", fetch)
 
-def read_raw(rel: str) -> str | None:
-    """1ファイルの生 Markdown。"""
-    if not _token():
+    def read_raw(self, rel: str) -> str | None:
+        if not self.available():
+            return None
+
+        def fetch():
+            body = self._get(
+                f"https://api.github.com/repos/{self.repo}/contents/{quote(rel)}?ref={self.branch}", raw=True)
+            return body.decode("utf-8") if body else None
+
+        return self._cached(f"raw:{rel}", fetch)
+
+    def all_contents(self) -> dict[str, str]:
+        paths = self.list_paths()
+
+        def fetch():
+            out: dict[str, str] = {}
+            with ThreadPoolExecutor(max_workers=8) as ex:
+                for rel, content in zip(paths, ex.map(self.read_raw, paths)):
+                    if content is not None:
+                        out[rel] = content
+            return out
+
+        return self._cached("all", fetch)
+
+    def search(self, query: str, limit: int = 10) -> list[dict]:
+        q = query.lower()
+        hits: list[dict] = []
+        for rel, content in self.all_contents().items():
+            matched = [ln.strip() for ln in content.splitlines() if q in ln.lower()][:2]
+            if matched:
+                hits.append({"node": rel, "lines": matched})
+                if len(hits) >= limit:
+                    break
+        return hits
+
+    def read_node(self, name: str) -> str | None:
+        target = name.strip().lower().removesuffix(".md")
+        for rel in self.list_paths():
+            stem = rel.split("/")[-1].removesuffix(".md").lower()
+            if stem == target:
+                return self.read_raw(rel)
+        for rel, content in self.all_contents().items():
+            head = content[:2000]
+            for line in head.splitlines():
+                if line.strip().lower() == f"id: {target}":
+                    return content
         return None
 
-    def fetch():
-        from urllib.parse import quote
-        body = _get(f"https://api.github.com/repos/{REPO}/contents/{quote(rel)}?ref={BRANCH}", raw=True)
-        return body.decode("utf-8") if body else None
 
-    return _cached(f"raw:{rel}", fetch)
+# (token, repo, branch) 単位でクライアントをメモ化 → キャッシュを跨ぎ再利用しつつユーザー分離。
+_clients: dict[tuple[str, str, str], KbClient] = {}
 
 
-def _all_contents() -> dict[str, str]:
-    """全 md の {path: content}。並列取得 + キャッシュ(検索用)。"""
-    paths = list_paths()
-
-    def fetch():
-        out: dict[str, str] = {}
-        with ThreadPoolExecutor(max_workers=8) as ex:
-            for rel, content in zip(paths, ex.map(read_raw, paths)):
-                if content is not None:
-                    out[rel] = content
-        return out
-
-    return _cached("all", fetch)
-
-
-def search(query: str, limit: int = 10) -> list[dict]:
-    q = query.lower()
-    hits: list[dict] = []
-    for rel, content in _all_contents().items():
-        matched = [ln.strip() for ln in content.splitlines() if q in ln.lower()][:2]
-        if matched:
-            hits.append({"node": rel, "lines": matched})
-            if len(hits) >= limit:
-                break
-    return hits
-
-
-def read_node(name: str) -> str | None:
-    """名前(ファイル名 or frontmatter id)でノード本文を返す。"""
-    target = name.strip().lower().removesuffix(".md")
-    for rel in list_paths():
-        stem = rel.split("/")[-1].removesuffix(".md").lower()
-        if stem == target:
-            return read_raw(rel)
-    # frontmatter id フォールバック
-    for rel, content in _all_contents().items():
-        head = content[:2000]
-        for line in head.splitlines():
-            if line.strip().lower() == f"id: {target}":
-                return content
-    return None
+def get_client(token: str, repo: str, branch: str = "main") -> KbClient:
+    key = (token or "", repo or "", branch or "main")
+    c = _clients.get(key)
+    if c is None:
+        c = KbClient(token, repo, branch)
+        _clients[key] = c
+    return c

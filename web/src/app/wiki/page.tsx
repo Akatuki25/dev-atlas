@@ -22,7 +22,10 @@ export default async function WikiIndex() {
   if (!(await kbAvailable())) {
     return (
       <Page title="Wiki" description="開発ナレッジベース(knowledge_base)を wiki 形式で閲覧する">
-        <EmptyState message="KB を読めません。KB_GITHUB_TOKEN(private repo の read トークン)を設定してください(DEPLOY.md 参照)。" />
+        <EmptyState
+          message="KB がまだ設定されていません。Settings で GitHub PAT(Contents:Read)と KB リポジトリを登録してください。"
+          action={<Link href="/settings">Settings へ</Link>}
+        />
       </Page>
     );
   }

@@ -1,12 +1,27 @@
-// 手書き: KB(knowledge_base)読み取り層。**GitHub API 経由**(fs に置かない)。
-// private repo のトークンで tree/contents を読む → Vercel(サーバレス)でも Railway でも同一に動く。
-// 読むたびに最新(pull間隔のラグ無し)。Next の fetch キャッシュ(revalidate)で GitHub を叩きすぎない。
+// 手書き: KB(knowledge_base)読み取り層。**backend の /api/kb 経由**(マルチユーザー)。
+// backend がログインユーザーの UserSetting から復号 PAT でそのユーザーの KB を読む。
+// = PAT はフロントに出ない。ノードのメタ解析(frontmatter→カテゴリ)は従来どおり web 側。
+// ユーザーごとに内容が違うため Next の共有 fetch キャッシュは使わず no-store
+// (叩きすぎは backend 側の per-user TTL キャッシュが吸収する)。
 import "server-only";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./authOptions";
 
-const REPO = process.env.KB_REPO ?? "Akatuki25/knowledge_base";
-const BRANCH = process.env.KB_BRANCH ?? "main";
-const TOKEN = process.env.KB_GITHUB_TOKEN ?? "";
-const REVALIDATE = Number(process.env.KB_CACHE_SECONDS ?? "300"); // 既定5分キャッシュ
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+
+async function kbFetch<T>(path: string): Promise<T | null> {
+  let headers: HeadersInit = {};
+  try {
+    const session = await getServerSession(authOptions);
+    const token = (session as { backendToken?: string } | null)?.backendToken;
+    if (token) headers = { Authorization: `Bearer ${token}` };
+  } catch {
+    // セッション無し(auth 無効ローカル)= トークン無しで叩く(backend は env フォールバック)
+  }
+  const res = await fetch(`${API_BASE}${path}`, { headers, cache: "no-store" });
+  if (!res.ok) return null;
+  return (await res.json()) as T;
+}
 
 export type KbPage = {
   relPath: string;
@@ -43,43 +58,20 @@ export const CATEGORY_LABEL: Record<string, string> = {
   misc: "その他",
 };
 
-function ghHeaders(raw = false): HeadersInit {
-  return {
-    Authorization: `Bearer ${TOKEN}`,
-    Accept: raw ? "application/vnd.github.raw" : "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-}
-
 export async function kbAvailable(): Promise<boolean> {
-  if (!TOKEN) return false;
   return (await listPaths()).length > 0;
 }
 
-/** repo の md ファイルパス一覧(tree API 1回)。 */
+/** repo の md ファイルパス一覧(backend /api/kb/paths)。 */
 async function listPaths(): Promise<string[]> {
-  if (!TOKEN) return [];
-  const res = await fetch(
-    `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`,
-    { headers: ghHeaders(), next: { revalidate: REVALIDATE } },
-  );
-  if (!res.ok) return [];
-  const data = (await res.json()) as { tree?: { path: string; type: string }[] };
-  return (data.tree ?? [])
-    .filter((t) => t.type === "blob" && t.path.endsWith(".md"))
-    .map((t) => t.path)
-    .sort();
+  const data = await kbFetch<{ paths: string[] }>(`/api/kb/paths`);
+  return data?.paths ?? [];
 }
 
-/** 生 Markdown を取得(contents API raw)。存在しなければ null。 */
+/** 生 Markdown を取得(backend /api/kb/raw)。存在しなければ null。 */
 async function readRaw(rel: string): Promise<string | null> {
-  if (!TOKEN) return null;
-  const res = await fetch(
-    `https://api.github.com/repos/${REPO}/contents/${encodeURI(rel)}?ref=${BRANCH}`,
-    { headers: ghHeaders(true), next: { revalidate: REVALIDATE } },
-  );
-  if (!res.ok) return null;
-  return res.text();
+  const data = await kbFetch<{ content: string }>(`/api/kb/raw?path=${encodeURIComponent(rel)}`);
+  return data?.content ?? null;
 }
 
 function parseFrontmatter(raw: string): { fm: Record<string, string>; body: string } {

@@ -14,8 +14,11 @@ import os
 
 from mcp.server.fastmcp import FastMCP
 
-from app import kb_github
 from app.infra.db import tx
+from app.infra.kb_resolver import resolve_kb_client
+from app.infra.mcp_auth import email_for_mcp_token
+from app.infra.tenancy import DEV_OWNER, owner_scope
+from middleware.web_auth import get_auth_mode
 
 mcp = FastMCP("dev-atlas", stateless_http=True, streamable_http_path="/")
 
@@ -156,42 +159,63 @@ def complete_task(task_id: str) -> dict:
 @mcp.tool()
 def search_kb(query: str, limit: int = 10) -> list[dict]:
     """KB(開発ナレッジwiki)を全文検索し、ヒットしたノードとマッチ行を返す。"""
-    if not kb_github.available():
-        return [{"error": "KB_GITHUB_TOKEN 未設定(GitHub API 経由の KB 読み取り)"}]
-    return kb_github.search(query, limit)
+    c = resolve_kb_client()
+    if c is None:
+        return [{"error": "KB 未設定。/settings で GitHub PAT と repo を登録してください"}]
+    return c.search(query, limit)
 
 
 @mcp.tool()
 def read_kb_node(name: str) -> str:
     """KBノードを名前(ファイル名 or frontmatter id)で読み、本文(Markdown)を返す。"""
-    if not kb_github.available():
-        return "KB_GITHUB_TOKEN 未設定"
-    return kb_github.read_node(name) or f"KB node not found: {name}"
+    c = resolve_kb_client()
+    if c is None:
+        return "KB 未設定。/settings で GitHub PAT と repo を登録してください"
+    return c.read_node(name) or f"KB node not found: {name}"
 
 
 class _McpTokenGuard:
-    """MCP_TOKEN が設定されていれば /mcp への全リクエストに Bearer 認証を要求する ASGI ラッパ。
+    """MCP のユーザー識別 + principal 設定を行う ASGI ラッパ。
 
-    MCP クライアント(Claude Code 等)は NextAuth セッションを持たないため、Web の
-    セッションJWT(WebAuthMiddleware)ではなく共有トークンで守る。未設定ならローカル用に素通し。
+    MCP クライアント(Claude Code 等)は NextAuth セッションを持たないため、各ユーザーの
+    UserSetting.mcp_token(Bearer)で本人を識別し、そのユーザーとして owner_scope を張る
+    → ツールは本人の Project/Task/WorkLog/KB だけを触る(Web と同じテナント分離)。
+
+    互換: 環境変数 MCP_TOKEN(共有・単一ユーザー時代)も許可し MCP_OWNER_EMAIL にマップ。
+    ローカル(AUTH_MODE != all かつトークン無し)は DEV_OWNER で素通し。
     """
 
     def __init__(self, app) -> None:
         self._app = app
 
+    def _resolve_owner(self, token: str) -> str | None:
+        # 1) per-user トークン(UserSetting.mcp_token)
+        email = email_for_mcp_token(token) if token else None
+        if email:
+            return email
+        # 2) 互換: 共有 MCP_TOKEN → MCP_OWNER_EMAIL
+        legacy = os.environ.get("MCP_TOKEN")
+        if legacy and token and hmac.compare_digest(token, legacy):
+            return os.environ.get("MCP_OWNER_EMAIL", DEV_OWNER)
+        # 3) ローカル素通し(本番 AUTH_MODE=all では不可)
+        if get_auth_mode() != "all" and not legacy and not token:
+            return DEV_OWNER
+        return None
+
     async def __call__(self, scope, receive, send) -> None:
         if scope["type"] != "http":
             await self._app(scope, receive, send)
             return
-        expected = os.environ.get("MCP_TOKEN")
-        if expected:
-            headers = dict(scope.get("headers") or [])
-            auth = headers.get(b"authorization", b"").decode()
-            if not (auth.startswith("Bearer ") and hmac.compare_digest(auth[7:].strip(), expected)):
-                from starlette.responses import JSONResponse
-                await JSONResponse({"detail": "mcp authentication required"}, status_code=401)(scope, receive, send)
-                return
-        await self._app(scope, receive, send)
+        headers = dict(scope.get("headers") or [])
+        auth = headers.get(b"authorization", b"").decode()
+        token = auth[7:].strip() if auth.startswith("Bearer ") else ""
+        owner = self._resolve_owner(token)
+        if owner is None:
+            from starlette.responses import JSONResponse
+            await JSONResponse({"detail": "mcp authentication required"}, status_code=401)(scope, receive, send)
+            return
+        with owner_scope(owner):
+            await self._app(scope, receive, send)
 
 
 def build_mcp_asgi_app():

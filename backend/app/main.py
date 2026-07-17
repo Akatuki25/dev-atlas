@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.di.handlers import register_routers
+from app.handler.kb_router import new_kb_router
 from app.domain.service.project_service import ProjectService
 from app.domain.service.task_service import TaskService
 from app.domain.service.work_log_service import WorkLogService
@@ -65,6 +66,9 @@ def create_app() -> FastAPI:
         work_log_usecase=WorkLogUsecase(work_log_service),
         user_setting_usecase=UserSettingUsecase(user_setting_service),
     )
+
+    # KB 読み取り(手書き・非CRUD。principal のPATでそのユーザーのKBを読む)
+    app.include_router(new_kb_router())
 
     # MCP(エージェントからの進捗・工数の自動記録 + KB 検索)
     app.mount("/mcp", build_mcp_asgi_app())
