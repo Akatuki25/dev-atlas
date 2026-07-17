@@ -251,6 +251,47 @@ service TaskService {
   rpc DeleteTask(DeleteTaskRequest) returns (DeleteTaskResponse);
 }
 
+// ---------- UserSetting(ユーザーごとの設定: KB接続情報 + MCPトークン) ----------
+// @entity @owned
+message UserSetting {
+  // @pk @label ユーザー
+  string email = 1;
+  // @label GitHub PAT(暗号化保存・レスポンスではマスク) @form textarea
+  string github_pat_enc = 2;
+  // @required @label KBリポジトリ
+  string kb_repo = 3;
+  // @label KBブランチ
+  string kb_branch = 4;
+  // @label MCPトークン
+  string mcp_token = 5;
+  // @timestamp
+  int64 created_at_unix = 6;
+}
+
+// 自分の設定を取得(principal で解決。id はパスに出さない)
+message GetMySettingsRequest {}
+message GetMySettingsResponse {
+  UserSetting setting = 1;
+}
+
+// 自分の設定を作成/更新。github_pat は平文で受け取り、backend で暗号化して保存する。
+message UpsertMySettingsRequest {
+  string github_pat = 1;
+  string kb_repo = 2;
+  string kb_branch = 3;
+}
+message UpsertMySettingsResponse {
+  UserSetting setting = 1;
+}
+
+service UserSettingService {
+  // @http GET /api/settings
+  rpc GetMySettings(GetMySettingsRequest) returns (GetMySettingsResponse);
+
+  // @http PUT /api/settings
+  rpc UpsertMySettings(UpsertMySettingsRequest) returns (UpsertMySettingsResponse);
+}
+
 service WorkLogService {
   // @http GET /api/work-logs
   rpc ListWorkLogs(ListWorkLogsRequest) returns (ListWorkLogsResponse);

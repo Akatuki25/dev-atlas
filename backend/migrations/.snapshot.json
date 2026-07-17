@@ -104,6 +104,52 @@
         }
       }
     },
+    "user_settings": {
+      "columns": {
+        "created_at": {
+          "not_null": false,
+          "primary_key": false,
+          "sql_type": "timestamptz",
+          "unique": false
+        },
+        "email": {
+          "not_null": true,
+          "primary_key": true,
+          "sql_type": "text",
+          "unique": false
+        },
+        "github_pat_enc": {
+          "not_null": false,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "kb_branch": {
+          "not_null": false,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "kb_repo": {
+          "not_null": true,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "mcp_token": {
+          "not_null": false,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "owner_email": {
+          "not_null": false,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        }
+      }
+    },
     "work_logs": {
       "columns": {
         "created_at": {

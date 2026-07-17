@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.domain.entity.project import Project
 from app.domain.entity.work_log import WorkLog
 from app.domain.entity.task import Task
+from app.domain.entity.user_setting import UserSetting
 
 # migration-gen が参照する全 Entity。
-ALL = [Project, WorkLog, Task]
+ALL = [Project, WorkLog, Task, UserSetting]

@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from app.handler.project_handler import new_project_router
 from app.handler.task_handler import new_task_router
+from app.handler.user_setting_handler import new_user_setting_router
 from app.handler.work_log_handler import new_work_log_router
 
 
@@ -11,8 +12,10 @@ def register_routers(
     *,
     project_usecase,
     task_usecase,
+    user_setting_usecase,
     work_log_usecase,
 ) -> None:
     app.include_router(new_project_router(project_usecase))
     app.include_router(new_task_router(task_usecase))
+    app.include_router(new_user_setting_router(user_setting_usecase))
     app.include_router(new_work_log_router(work_log_usecase))
