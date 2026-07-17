@@ -32,6 +32,12 @@
           "sql_type": "text",
           "unique": false
         },
+        "owner_email": {
+          "not_null": false,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
         "progress": {
           "not_null": false,
           "primary_key": false,
@@ -67,6 +73,12 @@
           "unique": false
         },
         "note": {
+          "not_null": false,
+          "primary_key": false,
+          "sql_type": "text",
+          "unique": false
+        },
+        "owner_email": {
           "not_null": false,
           "primary_key": false,
           "sql_type": "text",
@@ -116,6 +128,12 @@
           "not_null": false,
           "primary_key": false,
           "sql_type": "integer",
+          "unique": false
+        },
+        "owner_email": {
+          "not_null": false,
+          "primary_key": false,
+          "sql_type": "text",
           "unique": false
         },
         "project_id": {

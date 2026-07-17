@@ -4,6 +4,7 @@ from sqlalchemy import select, delete as sql_delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from app.infra.db import tx
+from app.infra.tenancy import current_owner
 from app.domain.entity.project import Project
 from app.domain.repository.project_repository import (
     ProjectNotFoundError,
@@ -12,14 +13,19 @@ from app.domain.repository.project_repository import (
 
 
 class PostgresProjectRepository:
+    # @owned: 全クエリを principal(owner_email)で絞り、他テナントの行に触れさせない(横断seam)。
     def select_all(self) -> list[Project]:
-        return list(tx.session().scalars(select(Project)).all())
+        q = select(Project)
+        q = q.where(Project.owner_email == current_owner())
+        return list(tx.session().scalars(q).all())
 
     def select_by_pk(self, id) -> Project | None:
-        return tx.session().get(Project, id)
+        q = select(Project).where(Project.id == id, Project.owner_email == current_owner())
+        return tx.session().scalars(q).first()
 
     def insert(self, e: Project) -> None:
         s = tx.session()
+        e.owner_email = current_owner()
         s.add(e)
         try:
             s.flush()
@@ -30,6 +36,9 @@ class PostgresProjectRepository:
         if not es:
             return
         s = tx.session()
+        _owner = current_owner()
+        for e in es:
+            e.owner_email = _owner
         s.add_all(es)
         try:
             s.flush()
@@ -44,17 +53,20 @@ class PostgresProjectRepository:
             self._upsert(es)
 
     def _upsert(self, es: list[Project]) -> None:
-        cols = ['id', 'name', 'goal', 'status', 'progress', 'repo_url', 'kb_node', 'created_at']
+        cols = ['id', 'name', 'goal', 'status', 'progress', 'repo_url', 'kb_node', 'created_at'] + ["owner_email"]
+        _owner = current_owner()
+        for e in es:
+            e.owner_email = _owner
         vals = [{c: getattr(e, c) for c in cols} for e in es]
         stmt = pg_insert(Project).values(vals)
         upd = {c: getattr(stmt.excluded, c) for c in cols if c != "id"}
-        tx.session().execute(
-            stmt.on_conflict_do_update(index_elements=["id"], set_=upd)
-        )
+        # 他テナントの行を上書きしない(pk衝突でも owner 不一致なら更新対象外にする conflict 条件)
+        stmt = stmt.on_conflict_do_update(index_elements=["id"], set_=upd, where=(Project.owner_email == _owner))
+        tx.session().execute(stmt)
 
     def update(self, e: Project) -> None:
         s = tx.session()
-        obj = s.get(Project, e.id)
+        obj = s.scalars(select(Project).where(Project.id == e.id, Project.owner_email == current_owner())).first()
         if obj is None:
             raise ProjectNotFoundError()
         obj.name = e.name
@@ -68,7 +80,7 @@ class PostgresProjectRepository:
 
     def delete(self, id) -> None:
         s = tx.session()
-        obj = s.get(Project, id)
+        obj = s.scalars(select(Project).where(Project.id == id, Project.owner_email == current_owner())).first()
         if obj is None:
             raise ProjectNotFoundError()
         s.delete(obj)
@@ -77,15 +89,17 @@ class PostgresProjectRepository:
     def bulk_delete(self, ids) -> None:
         if not ids:
             return
-        res = tx.session().execute(sql_delete(Project).where(Project.id.in_(ids)))
+        stmt = sql_delete(Project).where(Project.id.in_(ids), Project.owner_email == current_owner())
+        res = tx.session().execute(stmt)
         if res.rowcount != len(ids):
             raise ProjectNotFoundError()
 
     def delete_all(self) -> None:
-        tx.session().execute(sql_delete(Project))
+        tx.session().execute(sql_delete(Project).where(Project.owner_email == current_owner()))
 
     def select_by_cursor(self, limit, after) -> list[Project]:
         q = select(Project).order_by(Project.id).limit(limit)
+        q = q.where(Project.owner_email == current_owner())
         if after is not None:
             q = q.where(Project.id > after)
         return list(tx.session().scalars(q).all())

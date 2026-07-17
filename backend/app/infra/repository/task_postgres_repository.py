@@ -4,6 +4,7 @@ from sqlalchemy import select, delete as sql_delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from app.infra.db import tx
+from app.infra.tenancy import current_owner
 from app.domain.entity.task import Task
 from app.domain.repository.task_repository import (
     TaskNotFoundError,
@@ -12,14 +13,19 @@ from app.domain.repository.task_repository import (
 
 
 class PostgresTaskRepository:
+    # @owned: 全クエリを principal(owner_email)で絞り、他テナントの行に触れさせない(横断seam)。
     def select_all(self) -> list[Task]:
-        return list(tx.session().scalars(select(Task)).all())
+        q = select(Task)
+        q = q.where(Task.owner_email == current_owner())
+        return list(tx.session().scalars(q).all())
 
     def select_by_pk(self, id) -> Task | None:
-        return tx.session().get(Task, id)
+        q = select(Task).where(Task.id == id, Task.owner_email == current_owner())
+        return tx.session().scalars(q).first()
 
     def insert(self, e: Task) -> None:
         s = tx.session()
+        e.owner_email = current_owner()
         s.add(e)
         try:
             s.flush()
@@ -30,6 +36,9 @@ class PostgresTaskRepository:
         if not es:
             return
         s = tx.session()
+        _owner = current_owner()
+        for e in es:
+            e.owner_email = _owner
         s.add_all(es)
         try:
             s.flush()
@@ -44,17 +53,20 @@ class PostgresTaskRepository:
             self._upsert(es)
 
     def _upsert(self, es: list[Task]) -> None:
-        cols = ['id', 'project_id', 'title', 'status', 'note', 'created_at']
+        cols = ['id', 'project_id', 'title', 'status', 'note', 'created_at'] + ["owner_email"]
+        _owner = current_owner()
+        for e in es:
+            e.owner_email = _owner
         vals = [{c: getattr(e, c) for c in cols} for e in es]
         stmt = pg_insert(Task).values(vals)
         upd = {c: getattr(stmt.excluded, c) for c in cols if c != "id"}
-        tx.session().execute(
-            stmt.on_conflict_do_update(index_elements=["id"], set_=upd)
-        )
+        # 他テナントの行を上書きしない(pk衝突でも owner 不一致なら更新対象外にする conflict 条件)
+        stmt = stmt.on_conflict_do_update(index_elements=["id"], set_=upd, where=(Task.owner_email == _owner))
+        tx.session().execute(stmt)
 
     def update(self, e: Task) -> None:
         s = tx.session()
-        obj = s.get(Task, e.id)
+        obj = s.scalars(select(Task).where(Task.id == e.id, Task.owner_email == current_owner())).first()
         if obj is None:
             raise TaskNotFoundError()
         obj.project_id = e.project_id
@@ -66,7 +78,7 @@ class PostgresTaskRepository:
 
     def delete(self, id) -> None:
         s = tx.session()
-        obj = s.get(Task, id)
+        obj = s.scalars(select(Task).where(Task.id == id, Task.owner_email == current_owner())).first()
         if obj is None:
             raise TaskNotFoundError()
         s.delete(obj)
@@ -75,15 +87,17 @@ class PostgresTaskRepository:
     def bulk_delete(self, ids) -> None:
         if not ids:
             return
-        res = tx.session().execute(sql_delete(Task).where(Task.id.in_(ids)))
+        stmt = sql_delete(Task).where(Task.id.in_(ids), Task.owner_email == current_owner())
+        res = tx.session().execute(stmt)
         if res.rowcount != len(ids):
             raise TaskNotFoundError()
 
     def delete_all(self) -> None:
-        tx.session().execute(sql_delete(Task))
+        tx.session().execute(sql_delete(Task).where(Task.owner_email == current_owner()))
 
     def select_by_cursor(self, limit, after) -> list[Task]:
         q = select(Task).order_by(Task.id).limit(limit)
+        q = q.where(Task.owner_email == current_owner())
         if after is not None:
             q = q.where(Task.id > after)
         return list(tx.session().scalars(q).all())

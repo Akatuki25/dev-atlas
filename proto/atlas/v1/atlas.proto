@@ -6,7 +6,7 @@ package atlas.v1;
 // backend(Python/FastAPI DDD 9層)と web(Next.js 型/client/CRUD UI)は
 // すべて mss-protoc-gen(vendored)がこのファイルから生成する。
 
-// @entity
+// @entity @owned
 message Project {
   // @pk @paging
   string id = 1;
@@ -26,7 +26,7 @@ message Project {
   int64 created_at_unix = 8;
 }
 
-// @entity
+// @entity @owned
 message WorkLog {
   // @pk @paging
   string id = 1;
@@ -44,7 +44,7 @@ message WorkLog {
   int64 created_at_unix = 6;
 }
 
-// @entity
+// @entity @owned
 message Task {
   // @pk @paging
   string id = 1;

@@ -16,6 +16,8 @@ class WorkLog(Base):
     minutes: Mapped[int] = mapped_column(Integer, nullable=True)
     source: Mapped[str] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    # @owned: 所有者(principal)。クライアントは触れず、repo が current_owner() で自動充填/絞り込みする。
+    owner_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     @classmethod
     def new(cls, id: str, project_id: str, summary: str, detail: str, minutes: int, source: str, created_at: datetime) -> "WorkLog":

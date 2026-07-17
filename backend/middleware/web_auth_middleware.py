@@ -35,4 +35,6 @@ class WebAuthMiddleware(BaseHTTPMiddleware):
             )
 
         request.state.web_session = session  # 後続ハンドラ/ログから参照可能
+        # @owned のテナンシー規約: principal を state に置く(生成 repo が require_owner 経由で読む)
+        request.state.principal_email = session.email
         return await call_next(request)
