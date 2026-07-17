@@ -7,14 +7,14 @@ principal(require_owner)で保護し、そのユーザーの UserSetting から
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 
 from app.infra.kb_resolver import resolve_kb_client
-from app.infra.tenancy import require_owner
 
 
 def new_kb_router() -> APIRouter:
-    router = APIRouter(prefix="/api/kb", dependencies=[Depends(require_owner)])
+    # principal はアプリ横断の TenancyMiddleware が owner_scope で張る
+    router = APIRouter(prefix="/api/kb")
 
     def _client():
         c = resolve_kb_client()

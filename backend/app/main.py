@@ -23,8 +23,25 @@ from app.usecase.project_usecase import ProjectUsecase
 from app.usecase.task_usecase import TaskUsecase
 from app.usecase.work_log_usecase import WorkLogUsecase
 from app.usecase.user_setting_usecase import UserSettingUsecase
+from app.infra.tenancy import DEV_OWNER, TenancyMiddleware
 from mcp_server.server import mcp, build_mcp_asgi_app
+from middleware.web_auth import WebAuthError, get_auth_mode, verify_session_jwt
 from middleware.web_auth_middleware import WebAuthMiddleware
+
+
+def _principal_from_scope(scope: dict) -> str | None:
+    """@owned のテナンシー: リクエストの Bearer JWT から principal(email)を解決。
+    AUTH_MODE!=all(ローカル)は DEV_OWNER。JWT 検証自体は WebAuthMiddleware も別途行う。"""
+    if get_auth_mode() != "all":
+        return DEV_OWNER
+    headers = dict(scope.get("headers") or [])
+    auth = headers.get(b"authorization", b"").decode()
+    if auth.startswith("Bearer "):
+        try:
+            return verify_session_jwt(auth[len("Bearer "):].strip()).email
+        except WebAuthError:
+            return None
+    return None
 
 
 @asynccontextmanager
@@ -46,6 +63,9 @@ def create_app() -> FastAPI:
     )
     # Webセッション認証(AUTH_MODE=all のときだけ有効。生成handlerには触れない横断保護)
     app.add_middleware(WebAuthMiddleware)
+    # @owned テナンシー: principal を owner_scope で全リクエストに張る(最外・pure-ASGI)。
+    # pure-ASGI ゆえ endpoint(threadpool)まで contextvar が伝播する(Depends では届かない)。
+    app.add_middleware(TenancyMiddleware, resolve=_principal_from_scope)
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:

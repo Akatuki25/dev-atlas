@@ -7,7 +7,10 @@ import "server-only";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./authOptions";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+// サーバコンポーネントから backend を叩くベース。compose ではコンテナ網の api:8000、
+// 本番(Railway)は公開URL(NEXT_PUBLIC_API_BASE)がサーバからも到達可能。
+const API_BASE =
+  process.env.API_BASE_INTERNAL ?? process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
 async function kbFetch<T>(path: string): Promise<T | null> {
   let headers: HeadersInit = {};

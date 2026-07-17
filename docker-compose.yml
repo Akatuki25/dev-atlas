@@ -48,6 +48,8 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # サーバコンポーネント(kb.ts)から backend を叩くベース(コンテナ網)
+      API_BASE_INTERNAL: http://api:8000
       # 認証(既定off。有効化する時は NEXT_PUBLIC_AUTH_ENABLED=1 でビルドし直す)
       NEXT_PUBLIC_AUTH_ENABLED: ${NEXT_PUBLIC_AUTH_ENABLED:-0}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-me}
