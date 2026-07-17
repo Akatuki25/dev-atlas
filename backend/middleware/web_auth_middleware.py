@@ -14,6 +14,10 @@ from middleware.web_auth import WebAuthError, requires_auth, verify_session_jwt
 
 class WebAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
+        # CORS プリフライト(OPTIONS)は認証ヘッダを持たない。ここで 401 にすると
+        # ブラウザが本リクエストをブロックする → 素通しして CORSMiddleware に処理させる。
+        if request.method == "OPTIONS":
+            return await call_next(request)
         if not requires_auth(request.url.path):
             return await call_next(request)
 
