@@ -30,6 +30,6 @@ for svc in "$API_SVC" "$WEB_SVC"; do
 done
 
 echo "▸ 両サービス再デプロイ"
-railway up --path-as-root backend --service "$API_SVC" --ci
-railway up --path-as-root web --service "$WEB_SVC" --ci
+railway up --path-as-root backend --service "$API_SVC" --detach
+railway up --path-as-root web --service "$WEB_SVC" --detach
 echo "✓ 完了。$WEB_URL/wiki にログインして KB ノードが並べば成功。"

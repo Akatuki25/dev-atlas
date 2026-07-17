@@ -42,10 +42,10 @@ railway variables --service "$WEB_SVC" \
   --set "NEXT_PUBLIC_AUTH_ENABLED=1" --skip-deploys
 
 echo "▸ api を再デプロイ(AUTH_MODE 反映)"
-railway up --path-as-root backend --service "$API_SVC" --ci
+railway up --path-as-root backend --service "$API_SVC" --detach
 
 echo "▸ web を再ビルド(NEXT_PUBLIC_AUTH_ENABLED はビルド時に焼き込むため必須)"
-railway up --path-as-root web --service "$WEB_SVC" --ci
+railway up --path-as-root web --service "$WEB_SVC" --detach
 
 echo "▸ 検証: 未ログインでトップが /api/auth/signin に誘導されるはず"
 code=$(curl -s -o /dev/null -w '%{http_code}' -L "$WEB_URL/wiki" || true)
