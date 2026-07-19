@@ -56,12 +56,17 @@ KB_GITHUB_TOKEN=github_pat_xxx ./scripts/setup-kb.sh
 → AUTH_MODE=all を確認してから(未認証なら中断)KB 変数を両サービスへ投入し再デプロイ。
 ※ 単一ソース化するなら Railway の **Shared Variables** に置き両サービスから参照。
 
-## 生成済みの共有 secret(api/web で同一)
-```
-NEXTAUTH_SECRET = YULwC19t9A2+7IZtVEnAYaIbSjHg+XYxY+sQ6FkrWZM=
-MCP_TOKEN(api) = a22c247cf56722818750de29cc22f370817c219755ae736436715e0b10e7aa53
-```
-MCP 登録: `claude mcp add --transport http dev-atlas https://api-production-c07a.up.railway.app/mcp --header "Authorization: Bearer <MCP_TOKEN>"`
+## 秘密の扱い(★repo に値を書かない)
+**secret の実値は Railway の環境変数だけに置き、このファイル(git)には絶対に書かない。**
+`NEXTAUTH_SECRET` が漏れると、許可リストのメールで有効なセッションJWTを偽造でき Google 認証を
+迂回できる(=全データにアクセス可能)。過去に本ファイルへ実値を書いてしまい、ローテーション
+(値の再生成→Railway再設定→再デプロイ)で無効化した。git 履歴には旧値が残るが、ローテ後は無効。
+
+- `NEXTAUTH_SECRET`(セッション署名) / `SECRET_ENC_KEY`(PAT暗号) は Railway shared/service var のみ。
+- MCP は**ユーザーごとの mcp_token**(`/settings` で発行)で認証。共有 `MCP_TOKEN` env は使わない(空=legacy無効)。
+- 鍵生成: `python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"`
+
+MCP 登録コマンドは web の `/settings` に**本人専用トークン付きで表示**される(それをコピーして実行)。
 
 ## Railway 運用メモ(CLI 完結でやった)
 - モノレポは `railway up --path-as-root backend --service api --ci`(サブをビルド根に)。`./backend` は不可。
