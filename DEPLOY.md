@@ -63,7 +63,8 @@ KB_GITHUB_TOKEN=github_pat_xxx ./scripts/setup-kb.sh
 (値の再生成→Railway再設定→再デプロイ)で無効化した。git 履歴には旧値が残るが、ローテ後は無効。
 
 - `NEXTAUTH_SECRET`(セッション署名) / `SECRET_ENC_KEY`(PAT暗号) は Railway shared/service var のみ。
-- MCP は**ユーザーごとの mcp_token**(`/settings` で発行)で認証。共有 `MCP_TOKEN` env は使わない(空=legacy無効)。
+- MCP は**ユーザーごとの mcp_token**(`/settings` で発行)で認証。共有 `MCP_TOKEN` の legacy 経路は
+  **コードから撤去済み**(env に残っていても無視。バックドアにならない)。KB も env 共有フォールバックを撤去し完全 per-user。
 - 鍵生成: `python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"`
 
 MCP 登録コマンドは web の `/settings` に**本人専用トークン付きで表示**される(それをコピーして実行)。
